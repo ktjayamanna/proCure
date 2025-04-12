@@ -41,10 +41,8 @@ async def log_url_visits(
                 detail=f"User with email {log_data.user_email} not found"
             )
 
-        # Get all purchased SaaS URLs for this user
-        purchased_saas_urls = db.query(PurchasedSaas.url).filter(
-            PurchasedSaas.owner == user.user_id
-        ).all()
+        # Get all purchased SaaS URLs
+        purchased_saas_urls = db.query(PurchasedSaas.url).all()
 
         # Extract URLs into a set for faster lookup
         purchased_urls = {saas.url for saas in purchased_saas_urls}
