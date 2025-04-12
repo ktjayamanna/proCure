@@ -4,7 +4,7 @@ from sqlalchemy.exc import SQLAlchemyError
 from datetime import datetime
 import logging
 
-from procure.server.models import UrlVisitEntry, UrlVisitLog, UrlVisitResponse
+from procure.server.models import UrlVisitLog, UrlVisitResponse
 
 from procure.db.engine import SessionLocal
 from procure.db.models import User, PurchasedSaas, UserActivity
