@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { MonitoringService } from './monitoring-service';
+import { SyncStatusDisplay } from '~features/sync/sync-status';
 
 interface HostnameEntry {
   hostname: string;
@@ -38,26 +39,41 @@ export const DomainList = () => {
   };
 
   if (loading) {
-    return <div className="plasmo-text-center plasmo-py-4">Loading sites...</div>;
+    return (
+      <div className="plasmo-w-full">
+        <div className="plasmo-text-center plasmo-py-4 plasmo-mb-4">Loading sites...</div>
+        <SyncStatusDisplay />
+      </div>
+    );
   }
 
   if (hostnames.length === 0) {
-    return <div className="plasmo-text-center plasmo-py-4">No sites visited in the last 24 hours.</div>;
+    return (
+      <div className="plasmo-w-full">
+        <div className="plasmo-text-center plasmo-py-4 plasmo-mb-4">No sites visited in the last 24 hours.</div>
+        <SyncStatusDisplay />
+      </div>
+    );
   }
 
   return (
-    <div className="plasmo-w-full plasmo-max-h-[400px] plasmo-overflow-y-auto">
-      <h2 className="plasmo-text-lg plasmo-font-semibold plasmo-mb-2">Sites Visited (Last 24 Hours)</h2>
-      <ul className="plasmo-divide-y plasmo-divide-gray-200">
-        {hostnames.map((entry) => (
-          <li key={entry.hostname} className="plasmo-py-2">
-            <div className="plasmo-flex plasmo-justify-between">
-              <span className="plasmo-font-medium">{entry.hostname}</span>
-              <span className="plasmo-text-sm plasmo-text-gray-500">{formatDate(entry.timestamp)}</span>
-            </div>
-          </li>
-        ))}
-      </ul>
+    <div className="plasmo-w-full">
+      <div className="plasmo-max-h-[350px] plasmo-overflow-y-auto plasmo-mb-4">
+        <h2 className="plasmo-text-lg plasmo-font-semibold plasmo-mb-2">Sites Visited (Last 24 Hours)</h2>
+        <ul className="plasmo-divide-y plasmo-divide-gray-200">
+          {hostnames.map((entry) => (
+            <li key={entry.hostname} className="plasmo-py-2">
+              <div className="plasmo-flex plasmo-justify-between">
+                <span className="plasmo-font-medium">{entry.hostname}</span>
+                <span className="plasmo-text-sm plasmo-text-gray-500">{formatDate(entry.timestamp)}</span>
+              </div>
+            </li>
+          ))}
+        </ul>
+      </div>
+
+      {/* Sync Status Component */}
+      <SyncStatusDisplay />
     </div>
   );
 };

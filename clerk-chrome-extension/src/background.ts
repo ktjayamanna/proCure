@@ -1,4 +1,5 @@
 import { MonitoringService } from "~features/monitoring/monitoring-service"
+import { SyncService } from "~features/sync/sync-service"
 
 // Listen for tab updates to capture navigation events
 chrome.tabs.onUpdated.addListener(async (tabId, changeInfo, tab) => {
@@ -26,9 +27,7 @@ chrome.tabs.onActivated.addListener(async (activeInfo) => {
   }
 })
 
-// Clean up expired hostnames periodically (every hour)
-const CLEANUP_INTERVAL = 60 * 60 * 1000 // 1 hour
-
+// Clean up expired hostnames periodically
 const cleanupExpiredHostnames = async () => {
   try {
     // This will automatically filter out expired hostnames
@@ -54,5 +53,34 @@ const cleanupExpiredHostnames = async () => {
 // Run cleanup on startup
 cleanupExpiredHostnames()
 
-// Set up periodic cleanup
-setInterval(cleanupExpiredHostnames, CLEANUP_INTERVAL)
+// Set up alarm for cleanup (every hour)
+chrome.alarms.create('cleanupExpiredHostnames', {
+  periodInMinutes: 60 // 1 hour
+})
+
+// Function to sync domain entries with backend
+const syncDomainEntries = async () => {
+  try {
+    console.log('Starting sync with backend...')
+    await SyncService.syncDomainEntries()
+  } catch (error) {
+    console.error('Error during sync process:', error)
+  }
+}
+
+// Set up alarm for syncing (every 2 minutes)
+chrome.alarms.create('syncDomainEntries', {
+  periodInMinutes: 2
+})
+
+// Listen for alarm events
+chrome.alarms.onAlarm.addListener((alarm) => {
+  if (alarm.name === 'syncDomainEntries') {
+    syncDomainEntries()
+  } else if (alarm.name === 'cleanupExpiredHostnames') {
+    cleanupExpiredHostnames()
+  }
+})
+
+// Run sync on startup (after a short delay to allow extension to initialize)
+setTimeout(syncDomainEntries, 5000)
