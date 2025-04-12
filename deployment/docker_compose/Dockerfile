@@ -21,5 +21,5 @@ COPY backend/ .
 ENV PYTHONPATH=/app
 ENV PYTHONUNBUFFERED=1
 
-# Expose ports for both services
-EXPOSE 8000 8001
+# Expose port for the core service
+EXPOSE 8000
