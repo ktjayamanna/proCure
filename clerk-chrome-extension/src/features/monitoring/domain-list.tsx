@@ -1,32 +1,32 @@
 import { useEffect, useState } from 'react';
 import { MonitoringService } from './monitoring-service';
 
-interface DomainEntry {
-  domain: string;
+interface HostnameEntry {
+  hostname: string;
   timestamp: number;
 }
 
 export const DomainList = () => {
-  const [domains, setDomains] = useState<DomainEntry[]>([]);
+  const [hostnames, setHostnames] = useState<HostnameEntry[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const fetchDomains = async () => {
+    const fetchHostnames = async () => {
       try {
         setLoading(true);
-        const activeDomains = await MonitoringService.getActiveDomainEntries();
-        setDomains(activeDomains);
+        const activeHostnames = await MonitoringService.getActiveDomainEntries();
+        setHostnames(activeHostnames);
       } catch (error) {
-        console.error('Error fetching domains:', error);
+        console.error('Error fetching hostnames:', error);
       } finally {
         setLoading(false);
       }
     };
 
-    fetchDomains();
+    fetchHostnames();
 
-    // Refresh domains every minute
-    const intervalId = setInterval(fetchDomains, 60 * 1000);
+    // Refresh hostnames every minute
+    const intervalId = setInterval(fetchHostnames, 60 * 1000);
 
     return () => {
       clearInterval(intervalId);
@@ -38,21 +38,21 @@ export const DomainList = () => {
   };
 
   if (loading) {
-    return <div className="plasmo-text-center plasmo-py-4">Loading domains...</div>;
+    return <div className="plasmo-text-center plasmo-py-4">Loading sites...</div>;
   }
 
-  if (domains.length === 0) {
-    return <div className="plasmo-text-center plasmo-py-4">No domains visited in the last 24 hours.</div>;
+  if (hostnames.length === 0) {
+    return <div className="plasmo-text-center plasmo-py-4">No sites visited in the last 24 hours.</div>;
   }
 
   return (
     <div className="plasmo-w-full plasmo-max-h-[400px] plasmo-overflow-y-auto">
-      <h2 className="plasmo-text-lg plasmo-font-semibold plasmo-mb-2">Domains Visited (Last 24 Hours)</h2>
+      <h2 className="plasmo-text-lg plasmo-font-semibold plasmo-mb-2">Sites Visited (Last 24 Hours)</h2>
       <ul className="plasmo-divide-y plasmo-divide-gray-200">
-        {domains.map((entry) => (
-          <li key={entry.domain} className="plasmo-py-2">
+        {hostnames.map((entry) => (
+          <li key={entry.hostname} className="plasmo-py-2">
             <div className="plasmo-flex plasmo-justify-between">
-              <span className="plasmo-font-medium">{entry.domain}</span>
+              <span className="plasmo-font-medium">{entry.hostname}</span>
               <span className="plasmo-text-sm plasmo-text-gray-500">{formatDate(entry.timestamp)}</span>
             </div>
           </li>

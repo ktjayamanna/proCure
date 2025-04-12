@@ -6,41 +6,41 @@ const storage = new Storage({
   area: "local" // Use local storage for persistence
 });
 
-// Interface for domain entry with timestamp
-interface DomainEntry {
-  domain: string;
+// Interface for hostname entry with timestamp
+interface HostnameEntry {
+  hostname: string;
   timestamp: number;
 }
 
-// Storage key for domain entries
-const DOMAIN_ENTRIES_KEY = 'domain_entries';
+// Storage key for hostname entries
+const HOSTNAME_ENTRIES_KEY = 'hostname_entries';
 
 // 24 hours in milliseconds
 const EXPIRATION_TIME = 24 * 60 * 60 * 1000;
 
 /**
- * Monitoring service to track domains with 24-hour expiration
+ * Monitoring service to track hostnames with 24-hour expiration
  */
 export class MonitoringService {
   /**
-   * Add a domain to the monitoring list
+   * Add a hostname to the monitoring list
    * @param url The URL to parse and add
    */
   static async addDomain(url: string): Promise<void> {
     try {
-      // Parse the URL to get the domain
+      // Parse the URL to get the hostname
       const parsedUrl = parse(url);
 
-      if (!parsedUrl.domain) {
-        console.warn('Could not parse domain from URL:', url);
+      if (!parsedUrl.hostname) {
+        console.warn('Could not parse hostname from URL:', url);
         return;
       }
 
       // Get existing entries
       const entries = await this.getDomainEntries();
 
-      // Check if domain already exists
-      const existingEntryIndex = entries.findIndex(entry => entry.domain === parsedUrl.domain);
+      // Check if hostname already exists
+      const existingEntryIndex = entries.findIndex(entry => entry.hostname === parsedUrl.hostname);
 
       const now = Date.now();
 
@@ -51,42 +51,42 @@ export class MonitoringService {
         // Only update if 24 hours have passed
         if (timeElapsed >= EXPIRATION_TIME) {
           entries[existingEntryIndex] = {
-            domain: parsedUrl.domain,
+            hostname: parsedUrl.hostname,
             timestamp: now
           };
         }
       } else {
         // Add new entry
         entries.push({
-          domain: parsedUrl.domain,
+          hostname: parsedUrl.hostname,
           timestamp: now
         });
       }
 
       // Save updated entries
-      await storage.set(DOMAIN_ENTRIES_KEY, entries);
+      await storage.set(HOSTNAME_ENTRIES_KEY, entries);
     } catch (error) {
-      console.error('Error adding domain to monitoring:', error);
+      console.error('Error adding hostname to monitoring:', error);
     }
   }
 
   /**
-   * Get all domain entries
+   * Get all hostname entries
    */
-  static async getDomainEntries(): Promise<DomainEntry[]> {
+  static async getDomainEntries(): Promise<HostnameEntry[]> {
     try {
-      const entries = await storage.get<DomainEntry[]>(DOMAIN_ENTRIES_KEY);
+      const entries = await storage.get<HostnameEntry[]>(HOSTNAME_ENTRIES_KEY);
       return entries || [];
     } catch (error) {
-      console.error('Error getting domain entries:', error);
+      console.error('Error getting hostname entries:', error);
       return [];
     }
   }
 
   /**
-   * Get active domain entries (within the last 24 hours)
+   * Get active hostname entries (within the last 24 hours)
    */
-  static async getActiveDomainEntries(): Promise<DomainEntry[]> {
+  static async getActiveDomainEntries(): Promise<HostnameEntry[]> {
     try {
       const entries = await this.getDomainEntries();
       const now = Date.now();
@@ -97,19 +97,19 @@ export class MonitoringService {
         return timeElapsed < EXPIRATION_TIME;
       });
     } catch (error) {
-      console.error('Error getting active domain entries:', error);
+      console.error('Error getting active hostname entries:', error);
       return [];
     }
   }
 
   /**
-   * Clear all domain entries
+   * Clear all hostname entries
    */
   static async clearDomainEntries(): Promise<void> {
     try {
-      await storage.set(DOMAIN_ENTRIES_KEY, []);
+      await storage.set(HOSTNAME_ENTRIES_KEY, []);
     } catch (error) {
-      console.error('Error clearing domain entries:', error);
+      console.error('Error clearing hostname entries:', error);
     }
   }
 }
