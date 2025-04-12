@@ -6,8 +6,6 @@ import {
   UserButton,
 } from '@clerk/chrome-extension'
 
-import { CountButton } from '~features/count-button'
-
 import '~style.css'
 
 const PUBLISHABLE_KEY = process.env.PLASMO_PUBLIC_CLERK_PUBLISHABLE_KEY
@@ -35,7 +33,7 @@ function IndexPopup() {
           </SignedIn>
         </header>
         <main className="plasmo-grow">
-          <CountButton />
+          {/* Counter component removed */}
         </main>
       </div>
     </ClerkProvider>
