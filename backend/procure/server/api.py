@@ -7,7 +7,7 @@ import uuid
 from procure.db.engine import SessionLocal
 from procure.db.models import User, Url
 
-app = FastAPI(title="Write Microservice", version="1.0.0")
+app = FastAPI(title="proCure Backend", version="1.0.0")
 
 def get_db():
     db = SessionLocal()
@@ -19,7 +19,7 @@ def get_db():
 @app.get("/")
 async def root():
     return {
-        "service": "procure Write Service",
+        "service": "proCure Backend",
         "version": app.version,
         "docs_url": "/docs",
         "health_check": "/ping"
@@ -31,7 +31,7 @@ async def ping(db: Session = Depends(get_db)):
     test_url = f"test_{uuid.uuid4().hex[:6]}"
     
     response = {
-        "message": "Write service is up and running!",
+        "message": "Backend is up and running!",
         "timestamp": datetime.now(timezone.utc).isoformat(),
         "database": {
             "read": {"status": "success", "error": None},
