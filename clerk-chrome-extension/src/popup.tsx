@@ -6,6 +6,8 @@ import {
   UserButton,
 } from '@clerk/chrome-extension'
 
+import { DomainList } from '~features/monitoring/domain-list'
+
 import '~style.css'
 
 const PUBLISHABLE_KEY = process.env.PLASMO_PUBLIC_CLERK_PUBLISHABLE_KEY
@@ -32,8 +34,16 @@ function IndexPopup() {
             <UserButton />
           </SignedIn>
         </header>
-        <main className="plasmo-grow">
-          {/* Counter component removed */}
+        <main className="plasmo-grow plasmo-w-full plasmo-p-4">
+          <SignedOut>
+            <div className="plasmo-text-center plasmo-py-8">
+              <h2 className="plasmo-text-xl plasmo-font-semibold plasmo-mb-2">Welcome to proCure</h2>
+              <p className="plasmo-text-gray-600 plasmo-mb-4">Sign in to see your domain monitoring activity</p>
+            </div>
+          </SignedOut>
+          <SignedIn>
+            <DomainList />
+          </SignedIn>
         </main>
       </div>
     </ClerkProvider>

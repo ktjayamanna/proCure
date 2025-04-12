@@ -1,5 +1,8 @@
 import cssText from "data-text:~style.css"
 import type { PlasmoCSConfig } from "plasmo"
+import { useEffect } from "react"
+
+import { MonitoringService } from "~features/monitoring/monitoring-service"
 
 export const config: PlasmoCSConfig = {
   matches: ["<all_urls>"]
@@ -36,9 +39,22 @@ export const getStyle = (): HTMLStyleElement => {
 }
 
 const PlasmoOverlay = () => {
+  useEffect(() => {
+    // Capture the current URL when the content script loads
+    const captureCurrentDomain = async () => {
+      try {
+        await MonitoringService.addDomain(window.location.href)
+      } catch (error) {
+        console.error("Error capturing domain:", error)
+      }
+    }
+
+    captureCurrentDomain()
+  }, [])
+
   return (
     <div className="plasmo-z-50 plasmo-flex plasmo-fixed plasmo-top-32 plasmo-right-8">
-      {/* Counter component removed */}
+      {/* Domain monitoring is active */}
     </div>
   )
 }
