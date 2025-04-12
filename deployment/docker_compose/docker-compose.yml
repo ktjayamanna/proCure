@@ -1,0 +1,52 @@
+version: "3.8"
+
+services:
+  postgres:
+    image: postgres:15
+    container_name: procure_postgres
+    restart: always
+    environment:
+      POSTGRES_USER: procure_user
+      POSTGRES_PASSWORD: procure_password
+      POSTGRES_DB: procure_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - procure_network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U procure_user -d procure_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  write_service:
+    build:
+      context: ../../
+      dockerfile: deployment/docker_compose/Dockerfile
+    container_name: procure_write_service
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgresql://procure_user:procure_password@postgres:5432/procure_db
+      PYTHONPATH: /app
+    volumes:
+      - ../../backend:/app
+    ports:
+      - "8000:8000"  # Changed from 8001 to 8000 since this is our main service
+    networks:
+      - procure_network
+    command: >
+      sh -c "
+        cd /app &&
+        sleep 5 &&  # Add a small delay to ensure postgres is ready
+        alembic upgrade head &&
+        uvicorn procure.server.write_service.api:app --host 0.0.0.0 --port 8000 --reload"
+
+volumes:
+  postgres_data:
+
+networks:
+  procure_network:
