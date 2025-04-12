@@ -1,20 +1,9 @@
-from fastapi import FastAPI, Depends, HTTPException
-from sqlalchemy.orm import Session
-from sqlalchemy.exc import SQLAlchemyError
-from datetime import datetime, timezone
-import uuid
+from fastapi import FastAPI
 
-from procure.db.engine import SessionLocal
-from procure.db.models import User, Url
+from procure.server.health import register_health_routes
+from procure.server.core import register_core_routes
 
 app = FastAPI(title="proCure Backend", version="1.0.0")
-
-def get_db():
-    db = SessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
 
 @app.get("/")
 async def root():
@@ -25,47 +14,8 @@ async def root():
         "health_check": "/ping"
     }
 
-@app.get("/ping")
-async def ping(db: Session = Depends(get_db)):
-    test_username = f"health_check_user_{uuid.uuid4().hex[:8]}"
-    test_url = f"test_{uuid.uuid4().hex[:6]}"
-    
-    response = {
-        "message": "Backend is up and running!",
-        "timestamp": datetime.now(timezone.utc).isoformat(),
-        "database": {
-            "read": {"status": "success", "error": None},
-            "write": {"status": "success", "error": None}
-        }
-    }
-    
-    # Test write and read
-    try:
-        # Write test
-        test_user = User(user_name=test_username)
-        db.add(test_user)
-        db.flush()
-        test_url_entry = Url(
-            shortened_url=test_url,
-            original_url="https://health.check.test",
-            owner_id=test_user.user_id
-        )
-        db.add(test_url_entry)
-        db.commit()
-        
-        # Read test
-        db.query(User).filter(User.user_name == test_username).first()
-        db.query(Url).filter(Url.shortened_url == test_url).first()
-        
-        # Cleanup
-        db.query(Url).filter(Url.shortened_url == test_url).delete()
-        db.query(User).filter(User.user_name == test_username).delete()
-        db.commit()
-        
-    except SQLAlchemyError as e:
-        db.rollback()
-        response["database"]["write"]["status"] = "failed"
-        response["database"]["write"]["error"] = str(e)
-        raise HTTPException(status_code=500, detail=response)
-        
-    return response
+# Register health check routes
+register_health_routes(app)
+
+# Register core routes
+register_core_routes(app)
