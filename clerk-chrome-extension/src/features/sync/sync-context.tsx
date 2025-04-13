@@ -3,6 +3,7 @@ import type { ReactNode } from 'react';
 import { Storage } from '@plasmohq/storage';
 import { MonitoringService } from '~features/monitoring/monitoring-service';
 import { type SyncStatus } from './background-sync';
+import { useAuth } from '@clerk/chrome-extension';
 
 // Create a storage instance for sync-related data
 const storage = new Storage({
@@ -37,6 +38,7 @@ export const SyncProvider: React.FC<SyncProviderProps> = ({ children }) => {
   const [syncStatus, setSyncStatus] = useState<SyncStatus>('idle');
   const [lastSyncTime, setLastSyncTime] = useState<number | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const { getToken } = useAuth();
 
   // Load initial state from storage
   useEffect(() => {
@@ -106,8 +108,12 @@ export const SyncProvider: React.FC<SyncProviderProps> = ({ children }) => {
         browser: 'Chrome'
       }));
 
+      const token = await getToken();
+      if (!token) {
+        throw new Error('No authentication token available');
+      }
+
       // Prepare request payload
-      // Note: Using a placeholder email since we're not implementing auth yet
       const payload = {
         user_email: 'test1@example.com',
         entries: formattedEntries
@@ -117,7 +123,8 @@ export const SyncProvider: React.FC<SyncProviderProps> = ({ children }) => {
       const response = await fetch(API_URL, {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json'
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
         },
         body: JSON.stringify(payload)
       });
