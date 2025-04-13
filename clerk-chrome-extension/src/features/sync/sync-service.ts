@@ -10,6 +10,9 @@ const storage = new Storage({
 const LAST_SYNC_TIME_KEY = 'last_sync_time';
 const SYNC_STATUS_KEY = 'sync_status';
 
+// Custom event name for sync completion
+const SYNC_COMPLETED_EVENT = 'procure_sync_completed';
+
 // Backend API URL
 const API_URL = 'http://127.0.0.1:8000/api/v1/url-visits';
 
@@ -27,31 +30,31 @@ export class SyncService {
     try {
       // Update sync status to syncing
       await this.setSyncStatus('syncing');
-      
+
       // Get active domain entries
       const entries = await MonitoringService.getActiveDomainEntries();
-      
+
       if (entries.length === 0) {
         console.log('No entries to sync');
         await this.setSyncStatus('success');
         await this.setLastSyncTime(Date.now());
         return true;
       }
-      
+
       // Format entries for the API
       const formattedEntries = entries.map(entry => ({
         url: `https://${entry.hostname}/`,
         timestamp: entry.timestamp,
         browser: 'Chrome'
       }));
-      
+
       // Prepare request payload
       // Note: Using a placeholder email since we're not implementing auth yet
       const payload = {
         user_email: 'test1@example.com',
         entries: formattedEntries
       };
-      
+
       // Send request to backend
       const response = await fetch(API_URL, {
         method: 'POST',
@@ -60,27 +63,35 @@ export class SyncService {
         },
         body: JSON.stringify(payload)
       });
-      
+
       if (!response.ok) {
         throw new Error(`API error: ${response.status}`);
       }
-      
+
       // Reset domain entries on successful sync
       await MonitoringService.clearDomainEntries();
-      
+
       // Update sync status and time
       await this.setSyncStatus('success');
-      await this.setLastSyncTime(Date.now());
-      
+      const syncTime = Date.now();
+      await this.setLastSyncTime(syncTime);
+
+      // Dispatch custom event for UI components to listen to
+      this.dispatchSyncCompletedEvent(true, syncTime);
+
       console.log('Successfully synced domain entries');
       return true;
     } catch (error) {
       console.error('Error syncing domain entries:', error);
       await this.setSyncStatus('error');
+
+      // Dispatch custom event for UI components to listen to
+      this.dispatchSyncCompletedEvent(false);
+
       return false;
     }
   }
-  
+
   /**
    * Set the last sync time
    */
@@ -91,7 +102,7 @@ export class SyncService {
       console.error('Error setting last sync time:', error);
     }
   }
-  
+
   /**
    * Get the last sync time
    */
@@ -104,7 +115,7 @@ export class SyncService {
       return null;
     }
   }
-  
+
   /**
    * Set the sync status
    */
@@ -115,7 +126,7 @@ export class SyncService {
       console.error('Error setting sync status:', error);
     }
   }
-  
+
   /**
    * Get the current sync status
    */
@@ -126,6 +137,26 @@ export class SyncService {
     } catch (error) {
       console.error('Error getting sync status:', error);
       return 'idle';
+    }
+  }
+
+  /**
+   * Dispatch a custom event when sync is completed
+   */
+  static dispatchSyncCompletedEvent(success: boolean, timestamp?: number): void {
+    try {
+      // Create and dispatch a custom event
+      const event = new CustomEvent(SYNC_COMPLETED_EVENT, {
+        detail: {
+          success,
+          timestamp: timestamp || null
+        }
+      });
+
+      // Dispatch on the document for UI components to listen to
+      document.dispatchEvent(event);
+    } catch (error) {
+      console.error('Error dispatching sync completed event:', error);
     }
   }
 }

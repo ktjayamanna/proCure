@@ -11,26 +11,38 @@ export const DomainList = () => {
   const [hostnames, setHostnames] = useState<HostnameEntry[]>([]);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    const fetchHostnames = async () => {
-      try {
-        setLoading(true);
-        const activeHostnames = await MonitoringService.getActiveDomainEntries();
-        setHostnames(activeHostnames);
-      } catch (error) {
-        console.error('Error fetching hostnames:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
+  const fetchHostnames = async () => {
+    try {
+      setLoading(true);
+      const activeHostnames = await MonitoringService.getActiveDomainEntries();
+      setHostnames(activeHostnames);
+    } catch (error) {
+      console.error('Error fetching hostnames:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
+  useEffect(() => {
     fetchHostnames();
 
     // Refresh hostnames every minute
     const intervalId = setInterval(fetchHostnames, 60 * 1000);
 
+    // Listen for sync completed events from background sync
+    const handleSyncCompleted = (event: CustomEvent) => {
+      if (event.detail?.success) {
+        console.log('Sync completed event received, refreshing hostnames');
+        fetchHostnames();
+      }
+    };
+
+    // Add event listener for sync completed events
+    document.addEventListener('procure_sync_completed', handleSyncCompleted as EventListener);
+
     return () => {
       clearInterval(intervalId);
+      document.removeEventListener('procure_sync_completed', handleSyncCompleted as EventListener);
     };
   }, []);
 
@@ -42,7 +54,7 @@ export const DomainList = () => {
     return (
       <div className="plasmo-w-full">
         <div className="plasmo-text-center plasmo-py-4 plasmo-mb-4">Loading sites...</div>
-        <SyncStatusDisplay />
+        <SyncStatusDisplay onSyncComplete={fetchHostnames} />
       </div>
     );
   }
@@ -51,7 +63,7 @@ export const DomainList = () => {
     return (
       <div className="plasmo-w-full">
         <div className="plasmo-text-center plasmo-py-4 plasmo-mb-4">No sites visited in the last 24 hours.</div>
-        <SyncStatusDisplay />
+        <SyncStatusDisplay onSyncComplete={fetchHostnames} />
       </div>
     );
   }
@@ -73,7 +85,7 @@ export const DomainList = () => {
       </div>
 
       {/* Sync Status Component */}
-      <SyncStatusDisplay />
+      <SyncStatusDisplay onSyncComplete={fetchHostnames} />
     </div>
   );
 };

@@ -1,7 +1,11 @@
 import { useEffect, useState } from 'react';
 import { SyncService, SyncStatus } from './sync-service';
 
-export const SyncStatusDisplay = () => {
+interface SyncStatusDisplayProps {
+  onSyncComplete?: () => void;
+}
+
+export const SyncStatusDisplay = ({ onSyncComplete }: SyncStatusDisplayProps) => {
   const [lastSyncTime, setLastSyncTime] = useState<number | null>(null);
   const [syncStatus, setSyncStatus] = useState<SyncStatus>('idle');
   const [isManualSyncing, setIsManualSyncing] = useState(false);
@@ -11,7 +15,7 @@ export const SyncStatusDisplay = () => {
     const fetchSyncInfo = async () => {
       const status = await SyncService.getSyncStatus();
       const time = await SyncService.getLastSyncTime();
-      
+
       setSyncStatus(status);
       setLastSyncTime(time);
     };
@@ -34,14 +38,19 @@ export const SyncStatusDisplay = () => {
   const handleManualSync = async () => {
     try {
       setIsManualSyncing(true);
-      await SyncService.syncDomainEntries();
-      
+      const success = await SyncService.syncDomainEntries();
+
       // Update the UI after sync
       const status = await SyncService.getSyncStatus();
       const time = await SyncService.getLastSyncTime();
-      
+
       setSyncStatus(status);
       setLastSyncTime(time);
+
+      // If sync was successful and callback exists, call it to refresh the list
+      if (success && onSyncComplete) {
+        onSyncComplete();
+      }
     } catch (error) {
       console.error('Error during manual sync:', error);
     } finally {
