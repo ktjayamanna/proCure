@@ -2,3 +2,5 @@
 **/.env
 #ignore pycache
 **/__pycache__
+# any .env. files
+**/.env.*

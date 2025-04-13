@@ -11,7 +11,7 @@ set -euo pipefail
 ENV_FILE="backend/.vscode/.env"
 
 # Allow passing query file as an argument
-QUERY_FILE="${1:-backend/scripts/sql/query_tables.sql}"
+QUERY_FILE="${1:-backend/scripts/sql/add_test_data.sql}"
 
 # Check .env exists
 if [ ! -f "$ENV_FILE" ]; then

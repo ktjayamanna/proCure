@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
-import { SyncService, SyncStatus } from './sync-service';
+import { SyncService } from './sync-service';
+import type { SyncStatus } from './sync-service';
 
 interface SyncStatusDisplayProps {
   onSyncComplete?: () => void;
