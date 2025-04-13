@@ -35,7 +35,13 @@ def is_signed_in(request: Request):
             # authorized_parties=[os.getenv('CLERK_AUTHORIZED_PARTY')] # works without this being empty.
         )
     )
-    return request_state.is_signed_in
+    is_authenticated = request_state.is_signed_in
+    if not is_authenticated:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Authentication required"
+        )
+    return is_authenticated
 
 
 # Create router
@@ -43,10 +49,9 @@ router = APIRouter(prefix="/api/v1", tags=["core"])
 
 @router.post("/url-visits", response_model=UrlVisitResponse)
 async def log_url_visits(
-    request: Request,
     log_data: UrlVisitLog,
     db: Session = Depends(get_db),
-    auth: dict = Depends(is_signed_in)
+    _: bool = Depends(is_signed_in)
 ):
     """
     Receive daily URL visit logs from users and update the database
