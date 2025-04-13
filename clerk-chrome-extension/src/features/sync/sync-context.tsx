@@ -115,6 +115,7 @@ export const SyncProvider: React.FC<SyncProviderProps> = ({ children }) => {
 
       // Prepare request payload
       const payload = {
+        user_email: 'test1@example.com',
         entries: formattedEntries
       };
 
