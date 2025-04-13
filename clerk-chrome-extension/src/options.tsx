@@ -1,6 +1,7 @@
 import { useState } from "react"
 
 import { MonitoringService } from "~features/monitoring/monitoring-service"
+import { SyncProvider } from "~features/sync/sync-context"
 
 import "~style.css"
 
@@ -24,7 +25,8 @@ function OptionsPage() {
   }
 
   return (
-    <div className="plasmo-p-4 plasmo-max-w-md plasmo-mx-auto">
+    <SyncProvider>
+      <div className="plasmo-p-4 plasmo-max-w-md plasmo-mx-auto">
       <h1 className="plasmo-text-2xl plasmo-font-bold plasmo-mb-4">proCure Extension Settings</h1>
 
       <div className="plasmo-bg-white plasmo-shadow plasmo-rounded-lg plasmo-p-4 plasmo-mb-4">
@@ -52,6 +54,7 @@ function OptionsPage() {
         <p>© 2024 proCure. All rights reserved.</p>
       </div>
     </div>
+    </SyncProvider>
   )
 }
 

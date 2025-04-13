@@ -1,35 +1,13 @@
-import { useEffect, useState } from 'react';
-import { SyncService } from './sync-service';
-import type { SyncStatus } from './sync-service';
+import { useState } from 'react';
+import { useSyncContext } from './sync-context';
 
 interface SyncStatusDisplayProps {
   onSyncComplete?: () => void;
 }
 
 export const SyncStatusDisplay = ({ onSyncComplete }: SyncStatusDisplayProps) => {
-  const [lastSyncTime, setLastSyncTime] = useState<number | null>(null);
-  const [syncStatus, setSyncStatus] = useState<SyncStatus>('idle');
+  const { syncStatus, lastSyncTime, syncDomainEntries, isLoading } = useSyncContext();
   const [isManualSyncing, setIsManualSyncing] = useState(false);
-
-  useEffect(() => {
-    // Fetch initial sync status and time
-    const fetchSyncInfo = async () => {
-      const status = await SyncService.getSyncStatus();
-      const time = await SyncService.getLastSyncTime();
-
-      setSyncStatus(status);
-      setLastSyncTime(time);
-    };
-
-    fetchSyncInfo();
-
-    // Set up interval to check for updates
-    const intervalId = setInterval(fetchSyncInfo, 10000); // Check every 10 seconds
-
-    return () => {
-      clearInterval(intervalId);
-    };
-  }, []);
 
   const formatSyncTime = (timestamp: number | null) => {
     if (!timestamp) return 'Never';
@@ -39,14 +17,7 @@ export const SyncStatusDisplay = ({ onSyncComplete }: SyncStatusDisplayProps) =>
   const handleManualSync = async () => {
     try {
       setIsManualSyncing(true);
-      const success = await SyncService.syncDomainEntries();
-
-      // Update the UI after sync
-      const status = await SyncService.getSyncStatus();
-      const time = await SyncService.getLastSyncTime();
-
-      setSyncStatus(status);
-      setLastSyncTime(time);
+      const success = await syncDomainEntries();
 
       // If sync was successful and callback exists, call it to refresh the list
       if (success && onSyncComplete) {
@@ -100,10 +71,10 @@ export const SyncStatusDisplay = ({ onSyncComplete }: SyncStatusDisplayProps) =>
         </div>
         <button
           onClick={handleManualSync}
-          disabled={isManualSyncing || syncStatus === 'syncing'}
+          disabled={isManualSyncing || isLoading || syncStatus === 'syncing'}
           className="plasmo-bg-blue-600 plasmo-text-white plasmo-text-sm plasmo-px-3 plasmo-py-1 plasmo-rounded plasmo-hover:plasmo-bg-blue-700 plasmo-disabled:plasmo-opacity-50"
         >
-          {isManualSyncing ? 'Syncing...' : 'Sync Now'}
+          {isManualSyncing || isLoading ? 'Syncing...' : 'Sync Now'}
         </button>
       </div>
       <p className="plasmo-text-xs plasmo-text-gray-500 plasmo-mt-2">

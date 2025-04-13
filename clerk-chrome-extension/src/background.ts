@@ -1,5 +1,5 @@
 import { MonitoringService } from "~features/monitoring/monitoring-service"
-import { SyncService } from "~features/sync/sync-service"
+import { BackgroundSync } from "~features/sync/background-sync"
 
 // Listen for tab updates to capture navigation events
 chrome.tabs.onUpdated.addListener(async (tabId, changeInfo, tab) => {
@@ -62,7 +62,7 @@ chrome.alarms.create('cleanupExpiredHostnames', {
 const syncDomainEntries = async () => {
   try {
     console.log('Starting sync with backend...')
-    await SyncService.syncDomainEntries()
+    await BackgroundSync.syncDomainEntries()
   } catch (error) {
     console.error('Error during sync process:', error)
   }

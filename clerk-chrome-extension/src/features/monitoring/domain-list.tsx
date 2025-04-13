@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { MonitoringService } from './monitoring-service';
 import { SyncStatusDisplay } from '~features/sync/sync-status';
+import { useSyncContext } from '~features/sync/sync-context';
 
 interface HostnameEntry {
   hostname: string;
@@ -10,6 +11,7 @@ interface HostnameEntry {
 export const DomainList = () => {
   const [hostnames, setHostnames] = useState<HostnameEntry[]>([]);
   const [loading, setLoading] = useState(true);
+  const { syncStatus, lastSyncTime } = useSyncContext();
 
   const fetchHostnames = async () => {
     try {
@@ -29,22 +31,17 @@ export const DomainList = () => {
     // Refresh hostnames every minute
     const intervalId = setInterval(fetchHostnames, 60 * 1000);
 
-    // Listen for sync completed events from background sync
-    const handleSyncCompleted = (event: CustomEvent) => {
-      if (event.detail?.success) {
-        console.log('Sync completed event received, refreshing hostnames');
-        fetchHostnames();
-      }
-    };
-
-    // Add event listener for sync completed events
-    document.addEventListener('procure_sync_completed', handleSyncCompleted as EventListener);
-
     return () => {
       clearInterval(intervalId);
-      document.removeEventListener('procure_sync_completed', handleSyncCompleted as EventListener);
     };
   }, []);
+
+  // Refresh hostnames when sync status changes to success
+  useEffect(() => {
+    if (syncStatus === 'success') {
+      fetchHostnames();
+    }
+  }, [syncStatus, lastSyncTime]);
 
   const formatDate = (timestamp: number) => {
     return new Date(timestamp).toLocaleString();
