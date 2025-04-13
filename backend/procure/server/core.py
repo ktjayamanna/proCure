@@ -1,13 +1,19 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, Request
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import SQLAlchemyError
 from datetime import datetime
 import logging
+import os
+from clerk_backend_api import Clerk
+from clerk_backend_api.jwks_helpers import AuthenticateRequestOptions
+
 
 from procure.server.models import UrlVisitLog, UrlVisitResponse
-
 from procure.db.engine import SessionLocal
 from procure.db.models import User, PurchasedSaas, UserActivity
+
+from dotenv import load_dotenv
+load_dotenv(".vscode/.env")
 
 # Set up logging
 logger = logging.getLogger(__name__)
@@ -20,13 +26,27 @@ def get_db():
     finally:
         db.close()
 
+
+def is_signed_in(request: Request):
+    sdk = Clerk(bearer_auth=os.getenv('CLERK_SECRET_KEY'))
+    request_state = sdk.authenticate_request(
+        request,
+        AuthenticateRequestOptions(
+            # authorized_parties=[os.getenv('CLERK_AUTHORIZED_PARTY')] # works without this being empty.
+        )
+    )
+    return request_state.is_signed_in
+
+
 # Create router
 router = APIRouter(prefix="/api/v1", tags=["core"])
 
 @router.post("/url-visits", response_model=UrlVisitResponse)
 async def log_url_visits(
+    request: Request,
     log_data: UrlVisitLog,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    auth: dict = Depends(is_signed_in)
 ):
     """
     Receive daily URL visit logs from users and update the database
