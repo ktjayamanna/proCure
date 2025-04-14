@@ -1,6 +1,6 @@
 -- Add test users
 INSERT INTO users (email) VALUES 
-('test1@example.com'),
+('kaveen.jayamanna@gmail.com'),
 ('test2@example.com'),
 ('test3@example.com')
 ON CONFLICT (email) DO NOTHING;
@@ -13,7 +13,7 @@ SELECT
     user_id,
     NOW()
 FROM users 
-WHERE email = 'test1@example.com'
+WHERE email = 'kaveen.jayamanna@gmail.com'
 ON CONFLICT DO NOTHING;
 
 INSERT INTO purchased_saas (saas_name, url, owner, created_at)
@@ -23,7 +23,7 @@ SELECT
     user_id,
     NOW()
 FROM users 
-WHERE email = 'test1@example.com'
+WHERE email = 'kaveen.jayamanna@gmail.com'
 ON CONFLICT DO NOTHING;
 
 INSERT INTO purchased_saas (saas_name, url, owner, created_at)

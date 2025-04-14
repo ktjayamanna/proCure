@@ -1,3 +1,4 @@
+from typing import Optional
 from fastapi import APIRouter, Depends, HTTPException, status, Request
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import SQLAlchemyError
@@ -26,6 +27,36 @@ def get_db():
     finally:
         db.close()
 
+def get_email_from_request(request: Request) -> Optional[str]:
+    try:
+        sdk = Clerk(bearer_auth=os.getenv('CLERK_SECRET_KEY'))
+        token_state = sdk.authenticate_request(
+            request,
+            AuthenticateRequestOptions(
+                # authorized_parties=[os.getenv('CLERK_AUTHORIZED_PARTY')]
+            )
+        )
+
+        if not getattr(token_state, 'is_valid', True):
+            logger.error("Authentication failed. Invalid token.")
+            raise Exception("Authentication failed. Invalid token.")
+
+        user_id = token_state.payload.get("sub")
+        if not user_id:
+            logger.error("User identifier ('sub') not found in token payload.")
+            raise Exception("User identifier not found in token payload.")
+
+        user_details = sdk.users.get(user_id=user_id)
+
+        email = user_details.email_addresses[0].email_address
+
+        if not email:
+            logger.error("Email field not found in the user details.")
+
+        return email
+    except Exception as exc:
+        logger.exception("Error in get_email_from_request: %s", exc)
+        return None
 
 def is_signed_in(request: Request):
     sdk = Clerk(bearer_auth=os.getenv('CLERK_SECRET_KEY'))
@@ -50,6 +81,7 @@ router = APIRouter(prefix="/api/v1", tags=["core"])
 @router.post("/url-visits", response_model=UrlVisitResponse)
 async def log_url_visits(
     log_data: UrlVisitLog,
+    request: Request,
     db: Session = Depends(get_db),
     _: bool = Depends(is_signed_in)
 ):
@@ -58,12 +90,14 @@ async def log_url_visits(
     if the URLs are from purchased SaaS.
     """
     try:
+        email = get_email_from_request(request)
+        logger.info(f"Ezio says Email: {email}")
         # Find the user by email
-        user = db.query(User).filter(User.email == log_data.user_email).first()
+        user = db.query(User).filter(User.email == email).first()
         if not user:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
-                detail=f"User with email {log_data.user_email} not found"
+                detail=f"User with email {email} not found"
             )
 
         # Get all purchased SaaS URLs

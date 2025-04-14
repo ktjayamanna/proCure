@@ -8,7 +8,6 @@ class UrlVisitEntry(BaseModel):
     browser: str = "Chrome"  # Default to Chrome since it's a Chrome extension
 
 class UrlVisitLog(BaseModel):
-    user_email: str
     entries: List[UrlVisitEntry]
 
 class UrlVisitResponse(BaseModel):
