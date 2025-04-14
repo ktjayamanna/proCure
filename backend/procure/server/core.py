@@ -91,8 +91,6 @@ async def log_url_visits(
     """
     try:
         email = get_email_from_request(request)
-        logger.info(f"Ezio says Email: {email}")
-        # Find the user by email
         user = db.query(User).filter(User.email == email).first()
         if not user:
             raise HTTPException(
