@@ -46,20 +46,22 @@ export const BackgroundSync = {
         browser: 'Chrome'
       }));
 
-      // Get authentication token from Firebase
-      const currentUser = auth.currentUser;
-      if (!currentUser) {
-        console.error('No authenticated user available for background sync');
-        await this.setSyncStatus('error');
-        return false;
-      }
+      // Temporarily bypass Firebase auth check
+      // const currentUser = auth.currentUser;
+      // if (!currentUser) {
+      //   console.error('No authenticated user available for background sync');
+      //   await this.setSyncStatus('error');
+      //   return false;
+      // }
 
-      const token = await currentUser.getIdToken();
-      if (!token) {
-        console.error('Failed to get ID token for background sync');
-        await this.setSyncStatus('error');
-        return false;
-      }
+      // Use a hardcoded token for testing
+      const token = "dummy-token";
+      // const token = await currentUser.getIdToken();
+      // if (!token) {
+      //   console.error('Failed to get ID token for background sync');
+      //   await this.setSyncStatus('error');
+      //   return false;
+      // }
 
       // Prepare request payload
       const payload = {

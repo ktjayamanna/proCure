@@ -62,13 +62,13 @@ chrome.alarms.create('cleanupExpiredHostnames', {
 // Function to sync domain entries with backend
 const syncDomainEntries = async () => {
   try {
-    // Only sync if user is authenticated
-    if (auth.currentUser) {
-      console.log('Starting sync with backend...')
-      await BackgroundSync.syncDomainEntries()
-    } else {
-      console.log('User not authenticated, skipping sync')
-    }
+    // Removing auth check temporarily
+    // if (auth.currentUser) {
+    console.log('Starting sync with backend...')
+    await BackgroundSync.syncDomainEntries()
+    // } else {
+    //   console.log('User not authenticated, skipping sync')
+    // }
   } catch (error) {
     console.error('Error during sync process:', error)
   }
@@ -101,7 +101,8 @@ auth.onAuthStateChanged((user) => {
 
 // Run sync on startup (after a short delay to allow extension to initialize)
 setTimeout(() => {
-  if (auth.currentUser) {
+  // if (auth.currentUser) {
+  if (true) {
     syncDomainEntries()
   }
 }, 5000)

@@ -34,56 +34,14 @@ def get_token_from_request(request: Request) -> Optional[str]:
     return authorization.replace("Bearer ", "")
 
 def get_current_user_email(request: Request) -> str:
-    """Authenticate the request using Firebase and return the user's email address."""
-    try:
-        if not firebase_app:
-            raise HTTPException(
-                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail="Authentication service not available"
-            )
-
-        token = get_token_from_request(request)
-        if not token:
-            raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="No authentication token provided"
-            )
-
-        try:
-            decoded_token = auth.verify_id_token(
-                token,
-                check_revoked=True,
-                clock_skew_seconds=60,
-                app=firebase_app
-            )
-        except Exception as e:
-            raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED,
-                detail=f"Error verifying authentication token: {str(e)}"
-            )
-
-        email = decoded_token.get("email")
-        if not email:
-            try:
-                user = auth.get_user(decoded_token.get("uid"), app=firebase_app)
-                email = user.email
-            except Exception:
-                raise HTTPException(
-                    status_code=status.HTTP_401_UNAUTHORIZED,
-                    detail="User email not found"
-                )
-
-        if not email:
-            raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="User email not found"
-            )
-
-        return email
-    except HTTPException:
-        raise
-    except Exception as e:
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Error processing authentication"
-        )
+    """Temporarily bypassed authentication - returns hardcoded email"""
+    # Commenting out Firebase auth temporarily
+    # try:
+    #     if not firebase_app:
+    #         raise HTTPException(
+    #             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+    #             detail="Authentication service not available"
+    #         )
+    #     ... rest of the original code ...
+    
+    return "kaveen.jayamanna@gmail.com"
