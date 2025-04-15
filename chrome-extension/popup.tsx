@@ -1,5 +1,8 @@
 import { useState } from "react"
 import { useFirebase } from "~firebase/hook"
+import { SyncProvider } from "~features/sync/sync-context"
+import { DomainList } from "~features/monitoring/domain-list"
+import "~style.css"
 
 export default function IndexPopup() {
   const { user, isLoading, error, onLogin, onSignUp, onLogout } = useFirebase()
@@ -17,54 +20,66 @@ export default function IndexPopup() {
   }
 
   return (
-    <div
-      style={{
-        display: "flex",
-        flexDirection: "column",
-        padding: 16,
-        width: "300px",
-        gap: 8
-      }}>
-      <h1>
-        Welcome to your <a href="https://www.plasmo.com">Plasmo</a> Extension!
-      </h1>
-      
-      {!user ? (
-        <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-          <input
-            type="email"
-            placeholder="Email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-          />
-          <input
-            type="password"
-            placeholder="Password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-          />
-          <button type="submit">
-            {isSignUp ? "Sign Up" : "Log in"}
-          </button>
-          <button type="button" onClick={() => setIsSignUp(!isSignUp)}>
-            {isSignUp ? "Already have an account? Log in" : "Need an account? Sign up"}
-          </button>
-          {error && <div style={{ color: "red" }}>{error}</div>}
-        </form>
-      ) : (
-        <button onClick={() => onLogout()}>Log out</button>
-      )}
-      
-      <div>
-        {isLoading ? "Loading..." : ""}
-        {!!user && (
-          <div>
-            Welcome to Plasmo, your email address is {user.email}
-          </div>
-        )}
-      </div>
+    <SyncProvider>
+      <div className="popup-container">
+        <header className="popup-header">
+          <h1 className="popup-title">proCure SaaS Usage Tracker</h1>
+          {user && (
+            <div className="user-controls">
+              <span className="user-email">{user.email}</span>
+              <button onClick={onLogout} className="logout-button">Log out</button>
+            </div>
+          )}
+        </header>
 
-      <footer>Crafted by @PlasmoHQ</footer>
-    </div>
+        <main className="popup-main">
+          {!user ? (
+            <div className="auth-container">
+              <h2 className="auth-title">{isSignUp ? "Create an account" : "Sign in"}</h2>
+              <form onSubmit={handleSubmit} className="auth-form">
+                <div className="form-group">
+                  <label htmlFor="email">Email</label>
+                  <input
+                    id="email"
+                    type="email"
+                    placeholder="Email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    className="form-input"
+                  />
+                </div>
+                <div className="form-group">
+                  <label htmlFor="password">Password</label>
+                  <input
+                    id="password"
+                    type="password"
+                    placeholder="Password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    className="form-input"
+                  />
+                </div>
+                <button type="submit" className="submit-button" disabled={isLoading}>
+                  {isLoading ? "Processing..." : isSignUp ? "Sign Up" : "Log in"}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setIsSignUp(!isSignUp)}
+                  className="toggle-auth-button"
+                >
+                  {isSignUp ? "Already have an account? Log in" : "Need an account? Sign up"}
+                </button>
+                {error && <div className="error-message">{error}</div>}
+              </form>
+              <p className="auth-info">
+                Sign in to track and manage your SaaS usage
+              </p>
+            </div>
+          ) : (
+            <DomainList />
+          )}
+        </main>
+      </div>
+    </SyncProvider>
   )
 }
