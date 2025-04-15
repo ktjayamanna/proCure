@@ -13,6 +13,8 @@ const storage = new Storage({
 // Storage keys
 const LAST_SYNC_TIME_KEY = 'last_sync_time';
 const SYNC_STATUS_KEY = 'sync_status';
+const AUTH_TOKEN_KEY = 'auth_token';
+const TOKEN_EXPIRY_KEY = 'token_expiry';
 
 // Backend API URL
 const API_URL = 'http://127.0.0.1:8000/api/v1/url-visits';
@@ -56,6 +58,27 @@ export const SyncProvider: React.FC<SyncProviderProps> = ({ children }) => {
 
     loadInitialState();
   }, []);
+
+  // Store authentication token when available
+  useEffect(() => {
+    const storeAuthToken = async () => {
+      try {
+        const token = await getToken();
+        if (token) {
+          // Store token with 55 minute expiry (slightly less than Clerk's default 1 hour)
+          await storage.set(AUTH_TOKEN_KEY, token);
+          const expiryTime = Date.now() + (55 * 60 * 1000);
+          await storage.set(TOKEN_EXPIRY_KEY, expiryTime);
+          console.log('Authentication token stored for background sync');
+        }
+      } catch (error) {
+        console.error('Error storing authentication token:', error);
+      }
+    };
+
+    // Store token on initial load
+    storeAuthToken();
+  }, [getToken]);
 
   // Update storage when state changes
   useEffect(() => {
@@ -108,10 +131,16 @@ export const SyncProvider: React.FC<SyncProviderProps> = ({ children }) => {
         browser: 'Chrome'
       }));
 
+      // Try to get token from Clerk
       const token = await getToken();
       if (!token) {
         throw new Error('No authentication token available');
       }
+
+      // Store the token for background use
+      await storage.set(AUTH_TOKEN_KEY, token);
+      const expiryTime = Date.now() + (55 * 60 * 1000);
+      await storage.set(TOKEN_EXPIRY_KEY, expiryTime);
 
       // Prepare request payload
       const payload = {

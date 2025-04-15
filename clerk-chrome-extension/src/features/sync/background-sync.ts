@@ -9,6 +9,8 @@ const storage = new Storage({
 // Storage keys
 const LAST_SYNC_TIME_KEY = 'last_sync_time';
 const SYNC_STATUS_KEY = 'sync_status';
+const AUTH_TOKEN_KEY = 'auth_token';
+const TOKEN_EXPIRY_KEY = 'token_expiry';
 
 // Backend API URL
 const API_URL = 'http://127.0.0.1:8000/api/v1/url-visits';
@@ -45,10 +47,19 @@ export const BackgroundSync = {
         browser: 'Chrome'
       }));
 
+      // Get authentication token from storage
+      const token = await storage.get<string>(AUTH_TOKEN_KEY);
+      const expiryTime = await storage.get<number>(TOKEN_EXPIRY_KEY);
+
+      // Check if token exists and is not expired
+      if (!token || !expiryTime || Date.now() >= expiryTime) {
+        console.error('No valid authentication token available for background sync');
+        await this.setSyncStatus('error');
+        return false;
+      }
+
       // Prepare request payload
-      // Note: Using a placeholder email since we're not implementing auth yet
       const payload = {
-        user_email: 'test1@example.com',
         entries: formattedEntries
       };
 
@@ -56,7 +67,8 @@ export const BackgroundSync = {
       const response = await fetch(API_URL, {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json'
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
         },
         body: JSON.stringify(payload)
       });
