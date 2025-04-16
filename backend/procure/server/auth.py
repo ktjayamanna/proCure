@@ -91,8 +91,10 @@ def get_token_from_request(request: Request) -> Optional[str]:
 
 async def get_current_user_email(request: Request, db: Session = Depends(get_db)) -> str:
     """Get the current user's email from the device token in the request."""
-    # For development/testing, you can uncomment this to bypass authentication
-    # return "kaveen.jayamanna@gmail.com"
+    # For development/testing, set this to True to bypass authentication
+    BYPASS_AUTH = True
+    if BYPASS_AUTH:
+        return "kaveen.jayamanna@gmail.com"
 
     token = get_token_from_request(request)
     if not token:
