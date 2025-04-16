@@ -1,7 +1,9 @@
 from fastapi import Depends, HTTPException
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import SQLAlchemyError
+from sqlalchemy import select, delete
 from datetime import datetime, timezone
+from typing import Dict, Any
 import uuid
 
 from procure.db.models import Employee, PurchasedSaas
@@ -16,7 +18,7 @@ def get_db():
 
 def register_health_routes(app):
     @app.get("/ping")
-    async def ping(db: Session = Depends(get_db)):
+    async def ping(db: Session = Depends(get_db)) -> Dict[str, Any]:
         test_email = f"health_check_user_{uuid.uuid4().hex[:8]}@example.com"
         test_url = f"https://test-{uuid.uuid4().hex[:6]}.example.com"
 
@@ -31,29 +33,34 @@ def register_health_routes(app):
 
         # Test write and read
         try:
-            # Write test
-            test_user = Employee(email=test_email)
-            db.add(test_user)
-            db.flush()
-            test_saas = PurchasedSaas(
-                saas_name="Health Check Test",
-                url=test_url,
-                owner=test_user.user_id
-            )
-            db.add(test_saas)
-            db.commit()
+            # Use a context manager for transaction management
+            with db.begin():
+                # Write test
+                test_user = Employee(email=test_email)
+                db.add(test_user)
+                db.flush()
+                test_saas = PurchasedSaas(
+                    saas_name="Health Check Test",
+                    url=test_url,
+                    owner=test_user.user_id
+                )
+                db.add(test_saas)
 
-            # Read test
-            db.query(Employee).filter(Employee.email == test_email).first()
-            db.query(PurchasedSaas).filter(PurchasedSaas.url == test_url).first()
+                # Read test using modern select
+                employee_stmt = select(Employee).where(Employee.email == test_email)
+                db.scalars(employee_stmt).one_or_none()
 
-            # Cleanup
-            db.query(PurchasedSaas).filter(PurchasedSaas.url == test_url).delete()
-            db.query(Employee).filter(Employee.email == test_email).delete()
-            db.commit()
+                saas_stmt = select(PurchasedSaas).where(PurchasedSaas.url == test_url)
+                db.scalars(saas_stmt).one_or_none()
+
+                # Cleanup using modern delete statements
+                saas_delete_stmt = delete(PurchasedSaas).where(PurchasedSaas.url == test_url)
+                db.execute(saas_delete_stmt)
+
+                employee_delete_stmt = delete(Employee).where(Employee.email == test_email)
+                db.execute(employee_delete_stmt)
 
         except SQLAlchemyError as e:
-            db.rollback()
             response["database"]["write"]["status"] = "failed"
             response["database"]["write"]["error"] = str(e)
             raise HTTPException(status_code=500, detail=response)

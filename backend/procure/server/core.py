@@ -1,10 +1,9 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import SQLAlchemyError
-from sqlalchemy import select, tuple_
+from sqlalchemy import select, and_, func
 from datetime import datetime, timezone
-from typing import List, Tuple
-from sqlalchemy import func
+from typing import List, Tuple, Optional, Set
 import logging
 
 from procure.server.auth import get_current_user_email
@@ -34,9 +33,9 @@ async def log_url_visits(
 ):
     try:
         # Get user using select
-        user_query = select(Employee).where(Employee.email == email)
-        user = db.scalars(user_query).first()
-        
+        user_stmt = select(Employee).where(Employee.email == email)
+        user: Optional[Employee] = db.scalars(user_stmt).one_or_none()
+
         if not user:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
@@ -44,20 +43,29 @@ async def log_url_visits(
             )
 
         # Get purchased SaaS URLs using select
-        purchased_urls_query = select(PurchasedSaas.url)
-        purchased_urls = {row[0] for row in db.execute(purchased_urls_query)}
+        purchased_urls_stmt = (
+            select(PurchasedSaas.url)
+            .where(PurchasedSaas.owner == user.user_id)
+        )
+        purchased_urls: Set[str] = {row[0] for row in db.execute(purchased_urls_stmt)}
 
         today = datetime.now(timezone.utc).date()
-        matched_urls: List[Tuple[str, str]] = []  # [(url, browser)]
 
-        # Collect matched URLs
+        # Process entries and find matches
+        matched_entries: List[Tuple[str, str, int]] = []  # [(url, browser, timestamp)]
         for entry in log_data.entries:
-            for purchased_url in purchased_urls:
-                if purchased_url in entry.url:
-                    matched_urls.append((purchased_url, entry.browser))
-                    break
+            matching_url = next(
+                (url for url in purchased_urls if url in entry.url),
+                None
+            )
+            if matching_url:
+                matched_entries.append((
+                    matching_url,
+                    entry.browser,
+                    entry.timestamp
+                ))
 
-        if not matched_urls:
+        if not matched_entries:
             return UrlVisitResponse(
                 processed=len(log_data.entries),
                 matched=0,
@@ -65,32 +73,36 @@ async def log_url_visits(
             )
 
         # Check existing activities for today in bulk
-        existing_activities_query = select(EmployeeActivity.url).where(
-            tuple_(
-                EmployeeActivity.user_id,
-                EmployeeActivity.url,
-                func.date(EmployeeActivity.date)
-            ).in_([
-                (user.user_id, url, today) for url, _ in matched_urls
-            ])
+        existing_activities_stmt = (
+            select(EmployeeActivity.url)
+            .where(and_(
+                EmployeeActivity.user_id == user.user_id,
+                EmployeeActivity.url.in_([url for url, _, _ in matched_entries]),
+                func.date(EmployeeActivity.date) == today
+            ))
         )
-        existing_urls = {row[0] for row in db.execute(existing_activities_query)}
+        existing_urls: Set[str] = {row[0] for row in db.execute(existing_activities_stmt)}
 
-        # Filter out URLs that already have entries today
+        # Create new activities for URLs not yet recorded today
         new_activities = [
             EmployeeActivity(
                 user_id=user.user_id,
                 url=url,
                 browser=browser,
-                date=datetime.now(timezone.utc)
+                date=datetime.fromtimestamp(timestamp / 1000, tz=timezone.utc)
             )
-            for url, browser in matched_urls
+            for url, browser, timestamp in matched_entries
             if url not in existing_urls
         ]
 
         if new_activities:
-            db.bulk_save_objects(new_activities)
-            db.commit()
+            # Use a context manager for transaction management
+            with db.begin():
+                # Bulk insert new activities
+                db.bulk_save_objects(
+                    new_activities,
+                    return_defaults=False
+                )
 
         return UrlVisitResponse(
             processed=len(log_data.entries),
@@ -99,7 +111,6 @@ async def log_url_visits(
         )
 
     except SQLAlchemyError as e:
-        db.rollback()
         logger.error(f"Database error processing URL visits: {str(e)}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
