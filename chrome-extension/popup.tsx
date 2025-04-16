@@ -9,7 +9,7 @@ export default function IndexPopup() {
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
   const [companyName, setCompanyName] = useState("")
-  const [role, setRole] = useState("user")
+  // Role field removed
   const [isSignUp, setIsSignUp] = useState(false)
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -20,7 +20,7 @@ export default function IndexPopup() {
         alert('Please enter a valid 6-digit organization code')
         return
       }
-      onSignUp(email, password, companyName, role)
+      onSignUp(email, password, companyName)
     } else {
       onLogin(email, password)
     }
@@ -91,19 +91,7 @@ export default function IndexPopup() {
                         Enter your 6-digit organization code
                       </small>
                     </div>
-                    <div className="form-group">
-                      <label htmlFor="role">Role</label>
-                      <select
-                        id="role"
-                        value={role}
-                        onChange={(e) => setRole(e.target.value)}
-                        className="form-input"
-                      >
-                        <option value="admin">Admin</option>
-                        <option value="manager">Manager</option>
-                        <option value="user">User</option>
-                      </select>
-                    </div>
+                    {/* Role field removed */}
                   </>
                 )}
                 <button type="submit" className="submit-button" disabled={isLoading}>

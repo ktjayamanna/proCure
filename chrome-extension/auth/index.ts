@@ -17,7 +17,6 @@ export interface User {
   user_id: number
   email: string
   company_name?: string
-  role?: string
 }
 
 export interface AuthState {
@@ -32,16 +31,16 @@ export const getDeviceId = async (): Promise<string> => {
   if (!deviceId) {
     // Create a unique string combining extension ID and timestamp
     const rawId = `${chrome.runtime.id}_${Date.now()}`
-    
+
     // Convert the string to a hash using SHA-256
     const msgBuffer = new TextEncoder().encode(rawId)
     const hashBuffer = await crypto.subtle.digest('SHA-256', msgBuffer)
-    
+
     // Convert the hash to a hex string
     deviceId = Array.from(new Uint8Array(hashBuffer))
       .map(b => b.toString(16).padStart(2, '0'))
       .join('')
-      
+
     await storage.set('device_id', deviceId)
   }
 
@@ -52,8 +51,7 @@ export const getDeviceId = async (): Promise<string> => {
 export const signUp = async (
   email: string,
   password: string,
-  company_name: string,
-  role: string
+  company_name: string
 ): Promise<{ user: User; token: string }> => {
   // Ensure company_name is a 6-digit number
   if (!/^\d{6}$/.test(company_name)) {
@@ -70,7 +68,6 @@ export const signUp = async (
       email,
       password,
       company_name,
-      role,
       device_id: deviceId
     })
   })
@@ -104,8 +101,7 @@ export const signUp = async (
   const user: User = {
     user_id: data.user_id,
     email: data.email,
-    company_name: data.company_name,
-    role: data.role
+    company_name: data.company_name
   }
 
   await storage.set(USER_KEY, user)
@@ -162,8 +158,7 @@ export const signIn = async (
   const user: User = {
     user_id: data.user_id,
     email: data.email,
-    company_name: data.company_name,
-    role: data.role
+    company_name: data.company_name
   }
 
   await storage.set(USER_KEY, user)
@@ -206,8 +201,7 @@ export const signInWithToken = async (): Promise<{ user: User; token: string } |
     const user: User = {
       user_id: data.user_id,
       email: data.email,
-      company_name: data.company_name,
-      role: data.role
+      company_name: data.company_name
     }
 
     await storage.set(USER_KEY, user)

@@ -87,11 +87,11 @@ export const useAuth = () => {
     }
   }
 
-  const onSignUp = async (email: string, password: string, companyName: string, role: string) => {
+  const onSignUp = async (email: string, password: string, companyName: string) => {
     setState(prev => ({ ...prev, isLoading: true, error: '' }))
 
     try {
-      const result = await signUp(email, password, companyName, role)
+      const result = await signUp(email, password, companyName)
       setState({
         isLoading: false,
         error: '',
