@@ -4,7 +4,7 @@ from sqlalchemy.exc import SQLAlchemyError
 from datetime import datetime
 import logging
 
-from procure.server.firebase_auth import get_current_user_email
+from procure.server.auth import get_current_user_email
 from procure.server.models import UrlVisitLog, UrlVisitResponse
 from procure.db.engine import SessionLocal
 from procure.db.models import User, PurchasedSaas, UserActivity
