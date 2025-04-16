@@ -46,6 +46,26 @@ FROM employees
 WHERE email = 'test3@example.com'
 ON CONFLICT DO NOTHING;
 
+INSERT INTO purchased_saas (saas_name, url, owner, created_at)
+SELECT
+    'Trello',
+    'https://trello.com',
+    user_id,
+    NOW()
+FROM employees
+WHERE email = 'test3@example.com'
+ON CONFLICT DO NOTHING;
+
+INSERT INTO purchased_saas (saas_name, url, owner, created_at)
+SELECT
+    'Zoom',
+    'https://zoom.us',
+    user_id,
+    NOW()
+FROM employees
+WHERE email = 'test3@example.com'
+ON CONFLICT DO NOTHING;
+
 -- Query to verify the data
 SELECT e.email, ps.saas_name, ps.url
 FROM employees e
