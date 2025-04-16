@@ -1,7 +1,10 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import SQLAlchemyError
-from datetime import datetime
+from sqlalchemy import select, tuple_
+from datetime import datetime, timezone
+from typing import List, Tuple
+from sqlalchemy import func
 import logging
 
 from procure.server.auth import get_current_user_email
@@ -29,45 +32,69 @@ async def log_url_visits(
     db: Session = Depends(get_db),
     email: str = Depends(get_current_user_email)
 ):
-    """
-    Receive daily URL visit logs from users and update the database
-    if the URLs are from purchased SaaS.
-    """
     try:
-        user = db.query(Employee).filter(Employee.email == email).first()
+        # Get user using select
+        user_query = select(Employee).where(Employee.email == email)
+        user = db.scalars(user_query).first()
+        
         if not user:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail=f"Employee with email {email} not found"
             )
 
-        # Get all purchased SaaS URLs
-        purchased_saas_urls = db.query(PurchasedSaas.url).all()
+        # Get purchased SaaS URLs using select
+        purchased_urls_query = select(PurchasedSaas.url)
+        purchased_urls = {row[0] for row in db.execute(purchased_urls_query)}
 
-        # Extract URLs into a set for faster lookup
-        purchased_urls = {saas.url for saas in purchased_saas_urls}
+        today = datetime.now(timezone.utc).date()
+        matched_urls: List[Tuple[str, str]] = []  # [(url, browser)]
 
-        # Process each URL visit entry
-        matched_count = 0
+        # Collect matched URLs
         for entry in log_data.entries:
-            # Check if the entry URL contains any of the purchased SaaS URLs
             for purchased_url in purchased_urls:
                 if purchased_url in entry.url:
-                    activity = EmployeeActivity(
-                        user_id=user.user_id,
-                        browser=entry.browser,
-                        url=purchased_url,  # Use the matched purchased URL
-                        date=datetime.fromtimestamp(entry.timestamp / 1000)  # Convert from milliseconds
-                    )
-                    db.add(activity)
-                    matched_count += 1
+                    matched_urls.append((purchased_url, entry.browser))
                     break
 
-        db.commit()
+        if not matched_urls:
+            return UrlVisitResponse(
+                processed=len(log_data.entries),
+                matched=0,
+                message="No matching URLs found"
+            )
+
+        # Check existing activities for today in bulk
+        existing_activities_query = select(EmployeeActivity.url).where(
+            tuple_(
+                EmployeeActivity.user_id,
+                EmployeeActivity.url,
+                func.date(EmployeeActivity.date)
+            ).in_([
+                (user.user_id, url, today) for url, _ in matched_urls
+            ])
+        )
+        existing_urls = {row[0] for row in db.execute(existing_activities_query)}
+
+        # Filter out URLs that already have entries today
+        new_activities = [
+            EmployeeActivity(
+                user_id=user.user_id,
+                url=url,
+                browser=browser,
+                date=datetime.now(timezone.utc)
+            )
+            for url, browser in matched_urls
+            if url not in existing_urls
+        ]
+
+        if new_activities:
+            db.bulk_save_objects(new_activities)
+            db.commit()
 
         return UrlVisitResponse(
             processed=len(log_data.entries),
-            matched=matched_count,
+            matched=len(new_activities),
             message="URL visit logs processed successfully"
         )
 
@@ -77,12 +104,6 @@ async def log_url_visits(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Database error: {str(e)}"
-        )
-    except Exception as e:
-        logger.error(f"Error processing URL visits: {str(e)}")
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Error processing URL visits: {str(e)}"
         )
 
 def register_core_routes(app):
