@@ -26,15 +26,22 @@ export interface AuthState {
   user: User | null
 }
 
-// Helper function to get a unique device ID
-// In a real implementation, this should be more sophisticated
 export const getDeviceId = async (): Promise<string> => {
   let deviceId = await storage.get<string>('device_id')
 
   if (!deviceId) {
-    // Generate a simple device ID based on browser info
-    // In a real implementation, use something more robust
-    deviceId = `chrome_${navigator.userAgent}_${Date.now()}`
+    // Create a unique string combining extension ID and timestamp
+    const rawId = `${chrome.runtime.id}_${Date.now()}`
+    
+    // Convert the string to a hash using SHA-256
+    const msgBuffer = new TextEncoder().encode(rawId)
+    const hashBuffer = await crypto.subtle.digest('SHA-256', msgBuffer)
+    
+    // Convert the hash to a hex string
+    deviceId = Array.from(new Uint8Array(hashBuffer))
+      .map(b => b.toString(16).padStart(2, '0'))
+      .join('')
+      
     await storage.set('device_id', deviceId)
   }
 
