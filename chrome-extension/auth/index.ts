@@ -71,7 +71,24 @@ export const signUp = async (
   if (!response.ok) {
     const errorData = await response.json()
     console.error('Sign up error:', errorData)
-    throw new Error(errorData.detail || (errorData.message ? JSON.stringify(errorData.message) : 'Failed to sign up'))
+
+    // Handle different error formats
+    if (Array.isArray(errorData.detail)) {
+      // Format validation errors
+      const errorMessages = errorData.detail.map(err => {
+        if (err.type === 'value_error') {
+          return err.msg
+        }
+        return `${err.loc.join('.')}: ${err.msg}`
+      }).join('\n')
+      throw new Error(errorMessages)
+    } else if (typeof errorData.detail === 'string') {
+      throw new Error(errorData.detail)
+    } else if (errorData.message) {
+      throw new Error(JSON.stringify(errorData.message))
+    } else {
+      throw new Error('Failed to sign up')
+    }
   }
 
   const data = await response.json()
@@ -112,7 +129,24 @@ export const signIn = async (
   if (!response.ok) {
     const errorData = await response.json()
     console.error('Sign in error:', errorData)
-    throw new Error(errorData.detail || (errorData.message ? JSON.stringify(errorData.message) : 'Failed to sign in'))
+
+    // Handle different error formats
+    if (Array.isArray(errorData.detail)) {
+      // Format validation errors
+      const errorMessages = errorData.detail.map(err => {
+        if (err.type === 'value_error') {
+          return err.msg
+        }
+        return `${err.loc.join('.')}: ${err.msg}`
+      }).join('\n')
+      throw new Error(errorMessages)
+    } else if (typeof errorData.detail === 'string') {
+      throw new Error(errorData.detail)
+    } else if (errorData.message) {
+      throw new Error(JSON.stringify(errorData.message))
+    } else {
+      throw new Error('Failed to sign in')
+    }
   }
 
   const data = await response.json()

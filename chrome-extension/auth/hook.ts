@@ -77,24 +77,6 @@ export const useAuth = () => {
 
       if (error instanceof Error) {
         errorMessage = error.message
-        // Try to parse JSON error messages
-        try {
-          if (errorMessage.includes('{') && errorMessage.includes('}')) {
-            const jsonStart = errorMessage.indexOf('{')
-            const jsonEnd = errorMessage.lastIndexOf('}')
-            const jsonStr = errorMessage.substring(jsonStart, jsonEnd + 1)
-            const parsedError = JSON.parse(jsonStr)
-
-            if (typeof parsedError === 'object') {
-              errorMessage = Object.entries(parsedError)
-                .map(([field, msgs]) => `${field}: ${Array.isArray(msgs) ? msgs.join(', ') : msgs}`)
-                .join('\n')
-            }
-          }
-        } catch (e) {
-          // If parsing fails, use the original error message
-          console.error('Error parsing error message:', e)
-        }
       }
 
       setState(prev => ({
@@ -121,24 +103,6 @@ export const useAuth = () => {
 
       if (error instanceof Error) {
         errorMessage = error.message
-        // Try to parse JSON error messages
-        try {
-          if (errorMessage.includes('{') && errorMessage.includes('}')) {
-            const jsonStart = errorMessage.indexOf('{')
-            const jsonEnd = errorMessage.lastIndexOf('}')
-            const jsonStr = errorMessage.substring(jsonStart, jsonEnd + 1)
-            const parsedError = JSON.parse(jsonStr)
-
-            if (typeof parsedError === 'object') {
-              errorMessage = Object.entries(parsedError)
-                .map(([field, msgs]) => `${field}: ${Array.isArray(msgs) ? msgs.join(', ') : msgs}`)
-                .join('\n')
-            }
-          }
-        } catch (e) {
-          // If parsing fails, use the original error message
-          console.error('Error parsing error message:', e)
-        }
       }
 
       setState(prev => ({

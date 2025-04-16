@@ -118,9 +118,20 @@ export default function IndexPopup() {
                 </button>
                 {error && (
                   <div className="error-message">
-                    {error.split('\n').map((line, i) => (
-                      <div key={i}>{line}</div>
-                    ))}
+                    {error.split('\n').map((line, i) => {
+                      // Check if the line contains a validation error message
+                      const isValidationError = line.includes('must contain') ||
+                                               line.includes('must be') ||
+                                               line.includes('Value error') ||
+                                               line.includes('Password must') ||
+                                               line.includes('Organization Code');
+                      return (
+                        <div key={i} className={isValidationError ? 'validation-error' : ''}>
+                          {/* Remove 'Value error, ' prefix if present */}
+                          {line.replace('Value error, ', '')}
+                        </div>
+                      );
+                    })}
                   </div>
                 )}
               </form>
