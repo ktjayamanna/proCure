@@ -4,7 +4,7 @@ from sqlalchemy.exc import SQLAlchemyError
 from datetime import datetime, timezone
 import uuid
 
-from procure.db.models import User, PurchasedSaas
+from procure.db.models import Employee, PurchasedSaas
 from procure.db.engine import SessionLocal
 
 def get_db():
@@ -32,7 +32,7 @@ def register_health_routes(app):
         # Test write and read
         try:
             # Write test
-            test_user = User(email=test_email)
+            test_user = Employee(email=test_email)
             db.add(test_user)
             db.flush()
             test_saas = PurchasedSaas(
@@ -44,12 +44,12 @@ def register_health_routes(app):
             db.commit()
 
             # Read test
-            db.query(User).filter(User.email == test_email).first()
+            db.query(Employee).filter(Employee.email == test_email).first()
             db.query(PurchasedSaas).filter(PurchasedSaas.url == test_url).first()
 
             # Cleanup
             db.query(PurchasedSaas).filter(PurchasedSaas.url == test_url).delete()
-            db.query(User).filter(User.email == test_email).delete()
+            db.query(Employee).filter(Employee.email == test_email).delete()
             db.commit()
 
         except SQLAlchemyError as e:

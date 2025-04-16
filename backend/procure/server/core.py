@@ -7,7 +7,7 @@ import logging
 from procure.server.auth import get_current_user_email
 from procure.server.models import UrlVisitLog, UrlVisitResponse
 from procure.db.engine import SessionLocal
-from procure.db.models import User, PurchasedSaas, UserActivity
+from procure.db.models import Employee, PurchasedSaas, EmployeeActivity
 
 # Set up logging
 logger = logging.getLogger(__name__)
@@ -34,11 +34,11 @@ async def log_url_visits(
     if the URLs are from purchased SaaS.
     """
     try:
-        user = db.query(User).filter(User.email == email).first()
+        user = db.query(Employee).filter(Employee.email == email).first()
         if not user:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
-                detail=f"User with email {email} not found"
+                detail=f"Employee with email {email} not found"
             )
 
         # Get all purchased SaaS URLs
@@ -53,7 +53,7 @@ async def log_url_visits(
             # Check if the entry URL contains any of the purchased SaaS URLs
             for purchased_url in purchased_urls:
                 if purchased_url in entry.url:
-                    activity = UserActivity(
+                    activity = EmployeeActivity(
                         user_id=user.user_id,
                         browser=entry.browser,
                         url=purchased_url,  # Use the matched purchased URL

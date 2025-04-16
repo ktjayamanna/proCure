@@ -9,7 +9,7 @@ from sqlalchemy.exc import SQLAlchemyError
 from pydantic import BaseModel, EmailStr, Field, field_validator
 
 from procure.db.engine import SessionLocal
-from procure.db.models import User, UserDeviceToken
+from procure.db.models import Employee, EmployeeDeviceToken
 
 # Set up logging
 logger = logging.getLogger(__name__)
@@ -27,7 +27,6 @@ class CreateUserRequest(BaseModel):
     email: EmailStr
     password: str = Field(..., min_length=8)
     company_name: str = Field(..., pattern=r'^\d{6}$')
-    role: str = Field(..., pattern=r'^(admin|manager|user)$')
     device_id: str
 
     @field_validator('company_name')
@@ -36,15 +35,6 @@ class CreateUserRequest(BaseModel):
         """Validate company_name is a 6-digit number"""
         if not v.isdigit() or len(v) != 6:
             raise ValueError('Organization Code must be a 6-digit number')
-        return v
-
-    @field_validator('role')
-    @classmethod
-    def validate_role(cls, v):
-        """Validate role is one of the allowed values"""
-        allowed_roles = ['admin', 'manager', 'user']
-        if v not in allowed_roles:
-            raise ValueError(f'Role must be one of: {", ".join(allowed_roles)}')
         return v
 
     @field_validator('password')
@@ -65,7 +55,6 @@ class CreateUserResponse(BaseModel):
     user_id: int
     email: str
     company_name: str
-    role: str
     device_token: str
 
 class SignInRequest(BaseModel):
@@ -78,7 +67,6 @@ class SignInResponse(BaseModel):
     user_id: int
     email: str
     company_name: Optional[str]
-    role: Optional[str]
     device_token: str
 
 # Helper functions
@@ -105,15 +93,15 @@ async def get_current_user_email(request: Request, db: Session = Depends(get_db)
 
     try:
         # Find the device token in the database
-        token_record = db.query(UserDeviceToken).filter(UserDeviceToken.token == token).first()
+        token_record = db.query(EmployeeDeviceToken).filter(EmployeeDeviceToken.token == token).first()
         if not token_record:
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 detail="Invalid authentication token"
             )
 
-        # Get the user associated with the token
-        user = db.query(User).filter(User.user_id == token_record.user_id).first()
+        # Get the employee associated with the token
+        user = db.query(Employee).filter(Employee.user_id == token_record.user_id).first()
         if not user:
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
@@ -163,28 +151,27 @@ async def create_user(
     Create a new user with the provided information.
     """
     try:
-        # Check if user with this email already exists
-        existing_user = db.query(User).filter(User.email == user_data.email).first()
+        # Check if employee with this email already exists
+        existing_user = db.query(Employee).filter(Employee.email == user_data.email).first()
         if existing_user:
             raise HTTPException(
                 status_code=status.HTTP_409_CONFLICT,
-                detail=f"User with email {user_data.email} already exists"
+                detail=f"Employee with email {user_data.email} already exists"
             )
 
-        # Create new user
+        # Create new employee
         hashed_password = hash_password(user_data.password)
-        new_user = User(
+        new_user = Employee(
             email=user_data.email,
             password_hash=hashed_password,
-            company_name=user_data.company_name,
-            role=user_data.role
+            company_name=user_data.company_name
         )
         db.add(new_user)
         db.flush()  # Flush to get the user_id
 
         # Generate and store device token
         device_token = generate_device_token()
-        new_token = UserDeviceToken(
+        new_token = EmployeeDeviceToken(
             user_id=new_user.user_id,
             device_id=user_data.device_id,
             token=device_token
@@ -196,7 +183,6 @@ async def create_user(
             user_id=new_user.user_id,
             email=new_user.email,
             company_name=new_user.company_name,
-            role=new_user.role,
             device_token=device_token
         )
 
@@ -228,13 +214,13 @@ async def sign_in(
 
         # Try to authenticate with device token first
         if device_token:
-            token_record = db.query(UserDeviceToken).filter(UserDeviceToken.token == device_token).first()
+            token_record = db.query(EmployeeDeviceToken).filter(EmployeeDeviceToken.token == device_token).first()
             if token_record:
-                user = db.query(User).filter(User.user_id == token_record.user_id).first()
+                user = db.query(Employee).filter(Employee.user_id == token_record.user_id).first()
 
         # If device token authentication failed, try email/password
         if not user and sign_in_data.email and sign_in_data.password:
-            user = db.query(User).filter(User.email == sign_in_data.email).first()
+            user = db.query(Employee).filter(Employee.email == sign_in_data.email).first()
             if not user or not verify_password(sign_in_data.password, user.password_hash):
                 raise HTTPException(
                     status_code=status.HTTP_401_UNAUTHORIZED,
@@ -250,9 +236,9 @@ async def sign_in(
         # If we authenticated with email/password, generate a new device token
         if not device_token:
             # Check if a token already exists for this device
-            existing_token = db.query(UserDeviceToken).filter(
-                UserDeviceToken.user_id == user.user_id,
-                UserDeviceToken.device_id == sign_in_data.device_id
+            existing_token = db.query(EmployeeDeviceToken).filter(
+                EmployeeDeviceToken.user_id == user.user_id,
+                EmployeeDeviceToken.device_id == sign_in_data.device_id
             ).first()
 
             if existing_token:
@@ -262,7 +248,7 @@ async def sign_in(
             else:
                 # Create a new token
                 device_token = generate_device_token()
-                new_token = UserDeviceToken(
+                new_token = EmployeeDeviceToken(
                     user_id=user.user_id,
                     device_id=sign_in_data.device_id,
                     token=device_token
@@ -275,7 +261,6 @@ async def sign_in(
             user_id=user.user_id,
             email=user.email,
             company_name=user.company_name,
-            role=user.role,
             device_token=device_token
         )
 
