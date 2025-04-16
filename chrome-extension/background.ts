@@ -1,6 +1,6 @@
-import { MonitoringService } from "~features/monitoring/monitoring-service"
-import { BackgroundSync } from "~features/sync/background-sync"
-import { auth } from "~firebase"
+import { MonitoringService } from "./features/monitoring/monitoring-service"
+import { BackgroundSync } from "./features/sync/background-sync"
+import { getCurrentUser } from "./auth"
 
 // Listen for tab updates to capture navigation events
 chrome.tabs.onUpdated.addListener(async (tabId, changeInfo, tab) => {
@@ -88,21 +88,25 @@ chrome.alarms.onAlarm.addListener((alarm) => {
   }
 })
 
-// Listen for auth state changes
-auth.onAuthStateChanged((user) => {
+// Check authentication status periodically
+setInterval(async () => {
+  const user = await getCurrentUser()
   if (user) {
-    console.log('User authenticated, running initial sync')
-    // Run sync when user authenticates
-    setTimeout(syncDomainEntries, 2000)
+    console.log('User authenticated, running sync')
+    syncDomainEntries()
   } else {
-    console.log('User signed out')
+    console.log('User not signed in')
   }
-})
+}, 60000) // Check every minute
 
 // Run sync on startup (after a short delay to allow extension to initialize)
 setTimeout(() => {
-  // if (auth.currentUser) {
-  if (true) {
-    syncDomainEntries()
-  }
+  // Check if user is authenticated
+  getCurrentUser().then(user => {
+    if (user) {
+      syncDomainEntries()
+    } else {
+      console.log('User not authenticated, skipping initial sync')
+    }
+  })
 }, 5000)

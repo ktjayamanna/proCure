@@ -1,19 +1,26 @@
 import { useState } from "react"
-import { useFirebase } from "~firebase/hook"
-import { SyncProvider } from "~features/sync/sync-context"
-import { DomainList } from "~features/monitoring/domain-list"
-import "~style.css"
+import { useAuth } from "./auth/hook"
+import { SyncProvider } from "./features/sync/sync-context"
+import { DomainList } from "./features/monitoring/domain-list"
+import "./style.css"
 
 export default function IndexPopup() {
-  const { user, isLoading, error, onLogin, onSignUp, onLogout } = useFirebase()
+  const { user, isLoading, error, onLogin, onSignUp, onLogout } = useAuth()
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
+  const [companyName, setCompanyName] = useState("")
+  const [role, setRole] = useState("user")
   const [isSignUp, setIsSignUp] = useState(false)
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
     if (isSignUp) {
-      onSignUp(email, password)
+      // Validate organization code
+      if (companyName.length !== 6 || !/^\d{6}$/.test(companyName)) {
+        alert('Please enter a valid 6-digit organization code')
+        return
+      }
+      onSignUp(email, password, companyName, role)
     } else {
       onLogin(email, password)
     }
@@ -58,7 +65,47 @@ export default function IndexPopup() {
                     onChange={(e) => setPassword(e.target.value)}
                     className="form-input"
                   />
+                  {isSignUp && (
+                    <small style={{ display: 'block', marginTop: '5px', color: '#666' }}>
+                      Password must be at least 8 characters with at least one uppercase letter, one lowercase letter, and one number.
+                    </small>
+                  )}
                 </div>
+                {isSignUp && (
+                  <>
+                    <div className="form-group">
+                      <label htmlFor="companyName">Organization Code</label>
+                      <input
+                        id="companyName"
+                        type="text"
+                        placeholder="6-digit code"
+                        value={companyName}
+                        onChange={(e) => {
+                          // Only allow digits and limit to 6 characters
+                          const value = e.target.value.replace(/\D/g, '').slice(0, 6);
+                          setCompanyName(value);
+                        }}
+                        className="form-input"
+                      />
+                      <small style={{ display: 'block', marginTop: '5px', color: '#666' }}>
+                        Enter your 6-digit organization code
+                      </small>
+                    </div>
+                    <div className="form-group">
+                      <label htmlFor="role">Role</label>
+                      <select
+                        id="role"
+                        value={role}
+                        onChange={(e) => setRole(e.target.value)}
+                        className="form-input"
+                      >
+                        <option value="admin">Admin</option>
+                        <option value="manager">Manager</option>
+                        <option value="user">User</option>
+                      </select>
+                    </div>
+                  </>
+                )}
                 <button type="submit" className="submit-button" disabled={isLoading}>
                   {isLoading ? "Processing..." : isSignUp ? "Sign Up" : "Log in"}
                 </button>
@@ -69,7 +116,13 @@ export default function IndexPopup() {
                 >
                   {isSignUp ? "Already have an account? Log in" : "Need an account? Sign up"}
                 </button>
-                {error && <div className="error-message">{error}</div>}
+                {error && (
+                  <div className="error-message">
+                    {error.split('\n').map((line, i) => (
+                      <div key={i}>{line}</div>
+                    ))}
+                  </div>
+                )}
               </form>
               <p className="auth-info">
                 Sign in to track and manage your SaaS usage

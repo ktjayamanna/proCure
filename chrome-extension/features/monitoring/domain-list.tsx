@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { MonitoringService, type HostnameEntry } from './monitoring-service';
-import { SyncStatusDisplay } from '~features/sync/sync-status';
-import { useSyncContext } from '~features/sync/sync-context';
+import { SyncStatusDisplay } from '../sync/sync-status';
+import { useSyncContext } from '../sync/sync-context';
 
 export const DomainList: React.FC = () => {
   const [hostnames, setHostnames] = useState<HostnameEntry[]>([]);

@@ -1,7 +1,7 @@
 import type { PlasmoCSConfig } from "plasmo"
 import { useEffect } from "react"
 
-import { MonitoringService } from "~features/monitoring/monitoring-service"
+import { MonitoringService } from "./features/monitoring/monitoring-service"
 
 export const config: PlasmoCSConfig = {
   matches: ["<all_urls>"]

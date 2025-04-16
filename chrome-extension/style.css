@@ -133,7 +133,12 @@ body {
 .error-message {
   color: #dc3545;
   font-size: 0.9rem;
-  text-align: center;
+  text-align: left;
+  background-color: #f8d7da;
+  border: 1px solid #f5c6cb;
+  border-radius: 4px;
+  padding: 10px;
+  margin-top: 10px;
 }
 
 .auth-info {

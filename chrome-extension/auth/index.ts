@@ -1,0 +1,195 @@
+import { Storage } from '@plasmohq/storage'
+
+// Create a storage instance for auth-related data
+const storage = new Storage({
+  area: "local"
+})
+
+// Storage keys
+const USER_KEY = 'auth_user'
+const TOKEN_KEY = 'auth_token'
+
+// Backend API URL - should be configurable in a production environment
+const API_URL = 'http://127.0.0.1:8000/api/v1/auth'
+
+// Types
+export interface User {
+  user_id: number
+  email: string
+  company_name?: string
+  role?: string
+}
+
+export interface AuthState {
+  isLoading: boolean
+  error: string
+  user: User | null
+}
+
+// Helper function to get a unique device ID
+// In a real implementation, this should be more sophisticated
+export const getDeviceId = async (): Promise<string> => {
+  let deviceId = await storage.get<string>('device_id')
+
+  if (!deviceId) {
+    // Generate a simple device ID based on browser info
+    // In a real implementation, use something more robust
+    deviceId = `chrome_${navigator.userAgent}_${Date.now()}`
+    await storage.set('device_id', deviceId)
+  }
+
+  return deviceId
+}
+
+// Sign up a new user
+export const signUp = async (
+  email: string,
+  password: string,
+  company_name: string,
+  role: string
+): Promise<{ user: User; token: string }> => {
+  // Ensure company_name is a 6-digit number
+  if (!/^\d{6}$/.test(company_name)) {
+    throw new Error('Organization Code must be a 6-digit number')
+  }
+  const deviceId = await getDeviceId()
+
+  const response = await fetch(`${API_URL}/create-user`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({
+      email,
+      password,
+      company_name,
+      role,
+      device_id: deviceId
+    })
+  })
+
+  if (!response.ok) {
+    const errorData = await response.json()
+    console.error('Sign up error:', errorData)
+    throw new Error(errorData.detail || (errorData.message ? JSON.stringify(errorData.message) : 'Failed to sign up'))
+  }
+
+  const data = await response.json()
+
+  // Store user and token in storage
+  const user: User = {
+    user_id: data.user_id,
+    email: data.email,
+    company_name: data.company_name,
+    role: data.role
+  }
+
+  await storage.set(USER_KEY, user)
+  await storage.set(TOKEN_KEY, data.device_token)
+
+  return { user, token: data.device_token }
+}
+
+// Sign in with email and password
+export const signIn = async (
+  email: string,
+  password: string
+): Promise<{ user: User; token: string }> => {
+  const deviceId = await getDeviceId()
+
+  const response = await fetch(`${API_URL}/sign-in`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({
+      email,
+      password,
+      device_id: deviceId
+    })
+  })
+
+  if (!response.ok) {
+    const errorData = await response.json()
+    console.error('Sign in error:', errorData)
+    throw new Error(errorData.detail || (errorData.message ? JSON.stringify(errorData.message) : 'Failed to sign in'))
+  }
+
+  const data = await response.json()
+
+  // Store user and token in storage
+  const user: User = {
+    user_id: data.user_id,
+    email: data.email,
+    company_name: data.company_name,
+    role: data.role
+  }
+
+  await storage.set(USER_KEY, user)
+  await storage.set(TOKEN_KEY, data.device_token)
+
+  return { user, token: data.device_token }
+}
+
+// Sign in with device token
+export const signInWithToken = async (): Promise<{ user: User; token: string } | null> => {
+  const token = await storage.get<string>(TOKEN_KEY)
+  if (!token) {
+    return null
+  }
+
+  const deviceId = await getDeviceId()
+
+  try {
+    const response = await fetch(`${API_URL}/sign-in`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        device_token: token,
+        device_id: deviceId
+      })
+    })
+
+    if (!response.ok) {
+      // If token is invalid, clear storage and return null
+      await storage.remove(USER_KEY)
+      await storage.remove(TOKEN_KEY)
+      return null
+    }
+
+    const data = await response.json()
+
+    // Update user data in storage
+    const user: User = {
+      user_id: data.user_id,
+      email: data.email,
+      company_name: data.company_name,
+      role: data.role
+    }
+
+    await storage.set(USER_KEY, user)
+
+    return { user, token: data.device_token }
+  } catch (error) {
+    console.error('Error signing in with token:', error)
+    return null
+  }
+}
+
+// Sign out
+export const signOut = async (): Promise<void> => {
+  await storage.remove(USER_KEY)
+  await storage.remove(TOKEN_KEY)
+}
+
+// Get current user from storage
+export const getCurrentUser = async (): Promise<User | null> => {
+  return await storage.get<User>(USER_KEY)
+}
+
+// Get current token from storage
+export const getAuthToken = async (): Promise<string | null> => {
+  return await storage.get<string>(TOKEN_KEY)
+}

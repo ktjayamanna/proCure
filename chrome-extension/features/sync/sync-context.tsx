@@ -1,9 +1,9 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import type { ReactNode } from 'react';
 import { Storage } from '@plasmohq/storage';
-import { MonitoringService } from '~features/monitoring/monitoring-service';
-import { BackgroundSync, type SyncStatus } from './background-sync';
-import { auth } from '~firebase';
+import { MonitoringService } from '../monitoring/monitoring-service';
+import { type SyncStatus } from './background-sync';
+import { getAuthToken } from '../../auth';
 
 // Create a storage instance for sync-related data
 const storage = new Storage({
@@ -78,15 +78,10 @@ export const SyncProvider: React.FC<SyncProviderProps> = ({ children }) => {
         browser: 'Chrome'
       }));
 
-      // Get current user and token
-      const currentUser = auth.currentUser;
-      if (!currentUser) {
-        throw new Error('No authenticated user available');
-      }
-
-      const token = await currentUser.getIdToken();
+      // Get authentication token
+      const token = await getAuthToken();
       if (!token) {
-        throw new Error('Failed to get authentication token');
+        throw new Error('No authentication token available');
       }
 
       // Prepare request payload

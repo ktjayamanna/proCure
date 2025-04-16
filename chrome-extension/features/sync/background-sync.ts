@@ -1,6 +1,6 @@
 import { Storage } from '@plasmohq/storage';
-import { MonitoringService } from '~features/monitoring/monitoring-service';
-import { auth } from '~firebase';
+import { MonitoringService } from '../monitoring/monitoring-service';
+import { getAuthToken } from '../../auth';
 
 // Create a storage instance for sync-related data
 const storage = new Storage({
@@ -46,22 +46,13 @@ export const BackgroundSync = {
         browser: 'Chrome'
       }));
 
-      // Temporarily bypass Firebase auth check
-      // const currentUser = auth.currentUser;
-      // if (!currentUser) {
-      //   console.error('No authenticated user available for background sync');
-      //   await this.setSyncStatus('error');
-      //   return false;
-      // }
-
-      // Use a hardcoded token for testing
-      const token = "dummy-token";
-      // const token = await currentUser.getIdToken();
-      // if (!token) {
-      //   console.error('Failed to get ID token for background sync');
-      //   await this.setSyncStatus('error');
-      //   return false;
-      // }
+      // Get authentication token
+      const token = await getAuthToken();
+      if (!token) {
+        console.error('No authentication token available for background sync');
+        await this.setSyncStatus('error');
+        return false;
+      }
 
       // Prepare request payload
       const payload = {
