@@ -6,11 +6,11 @@ from typing import Optional
 from fastapi import APIRouter, Depends, HTTPException, Request, status
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import SQLAlchemyError
-from sqlalchemy import select, and_
 from pydantic import BaseModel, EmailStr, Field, field_validator
 
 from procure.db.engine import SessionLocal
-from procure.db.models import Employee, EmployeeDeviceToken
+from procure.db.models import Employee
+from procure.db import auth as db_auth
 
 # Set up logging
 logger = logging.getLogger(__name__)
@@ -93,22 +93,13 @@ async def get_current_user_email(request: Request, db: Session = Depends(get_db)
         )
 
     try:
-        # Find the device token in the database using modern select
-        token_stmt = select(EmployeeDeviceToken).where(EmployeeDeviceToken.token == token)
-        token_record = db.scalars(token_stmt).one_or_none()
-        if not token_record:
+        # Authenticate with token using the database module
+        success, user = db_auth.authenticate_with_token(db, token)
+
+        if not success or not user:
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 detail="Invalid authentication token"
-            )
-
-        # Get the employee associated with the token
-        user_stmt = select(Employee).where(Employee.user_id == token_record.user_id)
-        user = db.scalars(user_stmt).one_or_none()
-        if not user:
-            raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="User not found"
             )
 
         return user.email
@@ -154,35 +145,31 @@ async def create_user(
     Create a new user with the provided information.
     """
     try:
-        # Check if employee with this email already exists using modern select
-        existing_user_stmt = select(Employee).where(Employee.email == user_data.email)
-        existing_user = db.scalars(existing_user_stmt).one_or_none()
+        # Check if employee with this email already exists
+        existing_user = db_auth.get_employee_by_email(db, user_data.email)
         if existing_user:
             raise HTTPException(
                 status_code=status.HTTP_409_CONFLICT,
                 detail=f"Employee with email {user_data.email} already exists"
             )
 
-        # Use a context manager for transaction management
-        with db.begin():
-            # Create new employee
-            hashed_password = hash_password(user_data.password)
-            new_user = Employee(
-                email=user_data.email,
-                password_hash=hashed_password,
-                company_name=user_data.company_name
-            )
-            db.add(new_user)
-            db.flush()  # Flush to get the user_id
+        # Create new employee
+        hashed_password = hash_password(user_data.password)
+        new_user = db_auth.create_employee(
+            db,
+            user_data.email,
+            hashed_password,
+            user_data.company_name
+        )
 
-            # Generate and store device token
-            device_token = generate_device_token()
-            new_token = EmployeeDeviceToken(
-                user_id=new_user.user_id,
-                device_id=user_data.device_id,
-                token=device_token
-            )
-            db.add(new_token)
+        # Generate and store device token
+        device_token = generate_device_token()
+        db_auth.create_device_token(
+            db,
+            new_user.user_id,
+            user_data.device_id,
+            device_token
+        )
 
         return CreateUserResponse(
             user_id=new_user.user_id,
@@ -192,7 +179,6 @@ async def create_user(
         )
 
     except SQLAlchemyError as e:
-        db.rollback()
         logger.error(f"Database error creating user: {str(e)}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
@@ -216,20 +202,18 @@ async def sign_in(
     try:
         user: Optional[Employee] = None
         device_token = sign_in_data.device_token
+        success = False
 
         # Try to authenticate with device token first
         if device_token:
-            token_stmt = select(EmployeeDeviceToken).where(EmployeeDeviceToken.token == device_token)
-            token_record = db.scalars(token_stmt).one_or_none()
-            if token_record:
-                user_stmt = select(Employee).where(Employee.user_id == token_record.user_id)
-                user = db.scalars(user_stmt).one_or_none()
+            success, user = db_auth.authenticate_with_token(db, device_token)
 
         # If device token authentication failed, try email/password
-        if not user and sign_in_data.email and sign_in_data.password:
-            user_stmt = select(Employee).where(Employee.email == sign_in_data.email)
-            user = db.scalars(user_stmt).one_or_none()
-            if not user or not verify_password(sign_in_data.password, user.password_hash):
+        if not success and not user and sign_in_data.email and sign_in_data.password:
+            hashed_password = hash_password(sign_in_data.password)
+            success, user = db_auth.authenticate_with_credentials(db, sign_in_data.email, hashed_password)
+
+            if not success or not user:
                 raise HTTPException(
                     status_code=status.HTTP_401_UNAUTHORIZED,
                     detail="Invalid email or password"
@@ -243,30 +227,22 @@ async def sign_in(
 
         # If we authenticated with email/password, generate a new device token
         if not device_token:
-            # Use a context manager for transaction management
-            with db.begin():
-                # Check if a token already exists for this device
-                existing_token_stmt = select(EmployeeDeviceToken).where(
-                    and_(
-                        EmployeeDeviceToken.user_id == user.user_id,
-                        EmployeeDeviceToken.device_id == sign_in_data.device_id
-                    )
-                )
-                existing_token = db.scalars(existing_token_stmt).one_or_none()
+            # Check if a token already exists for this device
+            existing_token = db_auth.get_device_token(db, user.user_id, sign_in_data.device_id)
 
-                if existing_token:
-                    # Update the existing token
-                    device_token = generate_device_token()
-                    existing_token.token = device_token
-                else:
-                    # Create a new token
-                    device_token = generate_device_token()
-                    new_token = EmployeeDeviceToken(
-                        user_id=user.user_id,
-                        device_id=sign_in_data.device_id,
-                        token=device_token
-                    )
-                    db.add(new_token)
+            if existing_token:
+                # Update the existing token
+                device_token = generate_device_token()
+                db_auth.update_device_token(db, existing_token, device_token)
+            else:
+                # Create a new token
+                device_token = generate_device_token()
+                db_auth.create_device_token(
+                    db,
+                    user.user_id,
+                    sign_in_data.device_id,
+                    device_token
+                )
 
         return SignInResponse(
             user_id=user.user_id,
