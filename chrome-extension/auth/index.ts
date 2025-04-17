@@ -52,12 +52,9 @@ export const getDeviceId = async (): Promise<string> => {
 export const signUp = async (
   email: string,
   password: string,
-  organization_id: string
+  role: string = "member"
 ): Promise<{ user: User; token: string }> => {
-  // Ensure organization_id is a 6-digit number
-  if (!/^\d{6}$/.test(organization_id)) {
-    throw new Error('Organization Code must be a 6-digit number')
-  }
+  // Organization is determined by email domain
   const deviceId = await getDeviceId()
 
   const response = await fetch(`${API_URL}/create-user`, {
@@ -68,8 +65,8 @@ export const signUp = async (
     body: JSON.stringify({
       email,
       password,
-      organization_id,
-      device_id: deviceId
+      device_id: deviceId,
+      role
     })
   })
 

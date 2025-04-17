@@ -8,19 +8,13 @@ export default function IndexPopup() {
   const { user, isLoading, error, onLogin, onSignUp, onLogout } = useAuth()
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
-  const [organizationId, setOrganizationId] = useState("")
-  // Role field removed
+  const [role, setRole] = useState("member")
   const [isSignUp, setIsSignUp] = useState(false)
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
     if (isSignUp) {
-      // Validate organization code
-      if (organizationId.length !== 6 || !/^\d{6}$/.test(organizationId)) {
-        alert('Please enter a valid 6-digit organization code')
-        return
-      }
-      onSignUp(email, password, organizationId)
+      onSignUp(email, password, role)
     } else {
       onLogin(email, password)
     }
@@ -72,27 +66,22 @@ export default function IndexPopup() {
                   )}
                 </div>
                 {isSignUp && (
-                  <>
-                    <div className="form-group">
-                      <label htmlFor="organizationId">Organization Code</label>
-                      <input
-                        id="organizationId"
-                        type="text"
-                        placeholder="6-digit code"
-                        value={organizationId}
-                        onChange={(e) => {
-                          // Only allow digits and limit to 6 characters
-                          const value = e.target.value.replace(/\D/g, '').slice(0, 6);
-                          setOrganizationId(value);
-                        }}
-                        className="form-input"
-                      />
-                      <small style={{ display: 'block', marginTop: '5px', color: '#666' }}>
-                        Enter your 6-digit organization code
-                      </small>
-                    </div>
-                    {/* Role field removed */}
-                  </>
+                  <div className="form-group">
+                    <label htmlFor="role">Role</label>
+                    <select
+                      id="role"
+                      value={role}
+                      onChange={(e) => setRole(e.target.value)}
+                      className="form-input"
+                      disabled={isLoading}
+                    >
+                      <option value="member">Member</option>
+                      <option value="admin">Admin</option>
+                    </select>
+                    <small style={{ display: 'block', marginTop: '5px', color: '#666' }}>
+                      Select your role in the organization
+                    </small>
+                  </div>
                 )}
                 <button type="submit" className="submit-button" disabled={isLoading}>
                   {isLoading ? "Processing..." : isSignUp ? "Sign Up" : "Log in"}

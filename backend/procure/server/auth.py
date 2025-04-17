@@ -27,17 +27,8 @@ def get_db():
 class CreateUserRequest(BaseModel):
     email: EmailStr
     password: str = Field(..., min_length=8)
-    organization_id: str = Field(..., pattern=r'^\d{6}$')
     device_id: str
-
-    @field_validator('organization_id')
-    @classmethod
-    def validate_organization_id(cls, v):
-        """Validate organization_id is a 6-digit number"""
-        if not v.isdigit() or len(v) != 6:
-            raise ValueError('Organization Code must be a 6-digit number')
-        # Keep as string for storage
-        return v
+    role: str = "member"  # Default to member, can be "admin" or "member"
 
     @field_validator('password')
     @classmethod
@@ -82,10 +73,6 @@ def get_token_from_request(request: Request) -> Optional[str]:
 
 async def get_current_user_email(request: Request, db: Session = Depends(get_db)) -> str:
     """Get the current user's email from the device token in the request."""
-    # For development/testing, set this to True to bypass authentication
-    BYPASS_AUTH = True
-    if BYPASS_AUTH:
-        return "kaveen.jayamanna@gmail.com"
 
     token = get_token_from_request(request)
     if not token:
@@ -157,12 +144,61 @@ async def create_user(
 
         # Create new employee and device token
         hashed_password = hash_password(user_data.password)
-        new_user = db_auth.create_employee(
-            db,
-            user_data.email,
-            hashed_password,
-            user_data.organization_id
-        )
+
+        # Extract domain from email to find matching organization
+        email_parts = user_data.email.split('@')
+        domain = email_parts[1] if len(email_parts) > 1 else 'unknown'
+
+        # Find organization by domain name
+        organization = db_auth.get_organization_by_name(db, domain)
+        if not organization:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"No organization found for domain {domain}. Sign up failed."
+            )
+
+        organization_id = organization.organization_id
+
+        # Check if user can be added with the requested role
+        role = user_data.role.lower()
+        if role not in ["admin", "member"]:
+            role = "member"  # Default to member if invalid role
+
+        # Check if there are slots available for the requested role
+        if role == "admin" and organization.admins_remaining <= 0:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="No admin slots remaining in this organization. Sign up failed."
+            )
+        elif role == "member" and organization.members_remaining <= 0:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="No member slots remaining in this organization. Sign up failed."
+            )
+
+        # Decrement the appropriate counter
+        if role == "admin":
+            organization.admins_remaining -= 1
+        else:  # member
+            organization.members_remaining -= 1
+
+        # Create the employee
+        try:
+            new_user = db_auth.create_employee(
+                db,
+                user_data.email,
+                hashed_password,
+                organization_id,
+                role
+            )
+        except ValueError as e:
+            # Rollback the transaction
+            db.rollback()
+            # Convert ValueError to HTTPException
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=str(e) + ". Sign up failed."
+            )
 
         # Generate and store device token
         device_token = generate_device_token()
@@ -183,17 +219,25 @@ async def create_user(
             device_token=device_token
         )
 
+    except HTTPException as e:
+        # HTTPExceptions are already properly formatted, just re-raise them
+        # The transaction is already rolled back in the inner try-except block
+        raise e
     except SQLAlchemyError as e:
+        # Rollback the transaction
+        db.rollback()
         logger.error(f"Database error creating user: {str(e)}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Database error: {str(e)}"
+            detail=f"Database error: {str(e)}. Sign up failed."
         )
     except Exception as e:
+        # Rollback the transaction
+        db.rollback()
         logger.error(f"Error creating user: {str(e)}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Error creating user: {str(e)}"
+            detail=f"Error creating user: {str(e)}. Sign up failed."
         )
 
 @router.post("/sign-in", response_model=SignInResponse)

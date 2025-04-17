@@ -17,6 +17,8 @@ class Organization(Base):
 
     organization_id = Column(String(36), primary_key=True)
     name            = Column(String(255), nullable=False)
+    admins_remaining = Column(Integer, nullable=False, default=1)
+    members_remaining = Column(Integer, nullable=False, default=1000)
 
     employees = relationship(
         "Employee",
