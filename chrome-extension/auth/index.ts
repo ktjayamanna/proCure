@@ -14,9 +14,10 @@ const API_URL = 'http://127.0.0.1:8000/api/v1/auth'
 
 // Types
 export interface User {
-  user_id: number
+  employee_id: string
   email: string
-  company_name?: string
+  organization_id?: string
+  role?: string
 }
 
 export interface AuthState {
@@ -51,10 +52,10 @@ export const getDeviceId = async (): Promise<string> => {
 export const signUp = async (
   email: string,
   password: string,
-  company_name: string
+  organization_id: string
 ): Promise<{ user: User; token: string }> => {
-  // Ensure company_name is a 6-digit number
-  if (!/^\d{6}$/.test(company_name)) {
+  // Ensure organization_id is a 6-digit number
+  if (!/^\d{6}$/.test(organization_id)) {
     throw new Error('Organization Code must be a 6-digit number')
   }
   const deviceId = await getDeviceId()
@@ -67,7 +68,7 @@ export const signUp = async (
     body: JSON.stringify({
       email,
       password,
-      company_name,
+      organization_id,
       device_id: deviceId
     })
   })
@@ -99,9 +100,10 @@ export const signUp = async (
 
   // Store user and token in storage
   const user: User = {
-    user_id: data.user_id,
+    employee_id: data.employee_id,
     email: data.email,
-    company_name: data.company_name
+    organization_id: data.organization_id,
+    role: data.role
   }
 
   await storage.set(USER_KEY, user)
@@ -156,9 +158,10 @@ export const signIn = async (
 
   // Store user and token in storage
   const user: User = {
-    user_id: data.user_id,
+    employee_id: data.employee_id,
     email: data.email,
-    company_name: data.company_name
+    organization_id: data.organization_id,
+    role: data.role
   }
 
   await storage.set(USER_KEY, user)
@@ -199,9 +202,10 @@ export const signInWithToken = async (): Promise<{ user: User; token: string } |
 
     // Update user data in storage
     const user: User = {
-      user_id: data.user_id,
+      employee_id: data.employee_id,
       email: data.email,
-      company_name: data.company_name
+      organization_id: data.organization_id,
+      role: data.role
     }
 
     await storage.set(USER_KEY, user)

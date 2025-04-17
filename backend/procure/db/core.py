@@ -1,15 +1,25 @@
-from sqlalchemy import select, and_, func
+from sqlalchemy import select, and_, func, join
 from sqlalchemy.orm import Session
 from datetime import datetime, timezone
-from typing import List, Dict, Any, Optional
+from typing import List, Dict, Any, Optional, Tuple
 
-from procure.db.models import Employee, PurchasedSaas, EmployeeActivity
+from procure.db.models import Employee, PurchasedSaas, EmployeeActivity, Organization
 
 # Database operations for core functionality
 
 def get_employee_by_email(db: Session, email: str) -> Optional[Employee]:
     """Get an employee by email."""
     stmt = select(Employee).where(Employee.email == email)
+    return db.scalars(stmt).one_or_none()
+
+def get_organization_by_id(db: Session, organization_id: str) -> Optional[Organization]:
+    """Get an organization by ID."""
+    stmt = select(Organization).where(Organization.organization_id == organization_id)
+    return db.scalars(stmt).one_or_none()
+
+def get_purchased_saas_by_url(db: Session, url: str) -> Optional[PurchasedSaas]:
+    """Get a purchased SaaS by URL."""
+    stmt = select(PurchasedSaas).where(PurchasedSaas.url == url)
     return db.scalars(stmt).one_or_none()
 
 def process_url_visits(
@@ -49,19 +59,21 @@ def process_url_visits(
 
     # Find matches between entry URLs and purchased SaaS URLs directly in the database
     # This is done by checking if any purchased SaaS URL is contained within the entry URL
-    matched_entries = []
+    matched_entries: List[Tuple[int, str, int]] = []  # (contract_id, browser, timestamp)
 
-    # Get all purchased SaaS URLs
-    purchased_saas_stmt = select(PurchasedSaas.url)
-    purchased_urls = [row[0] for row in db.execute(purchased_saas_stmt)]
+    # Get all purchased SaaS URLs and their contract_ids
+    purchased_saas_stmt = select(PurchasedSaas.contract_id, PurchasedSaas.url).where(
+        PurchasedSaas.organization_id == user.organization_id
+    )
+    purchased_saas_data = [(row[0], row[1]) for row in db.execute(purchased_saas_stmt)]
 
     # Match entry URLs with purchased SaaS URLs
     # This part still needs Python processing as SQL LIKE/CONTAINS would need
     # a different approach for substring matching in this direction
     for entry_url, browser, timestamp in entry_urls:
-        for purchased_url in purchased_urls:
+        for contract_id, purchased_url in purchased_saas_data:
             if purchased_url in entry_url:  # Check if purchased URL is in entry URL
-                matched_entries.append((purchased_url, browser, timestamp))
+                matched_entries.append((contract_id, browser, timestamp))
                 break  # Found a match, move to next entry
 
     if not matched_entries:
@@ -72,28 +84,28 @@ def process_url_visits(
             "message": "No matching URLs found"
         }
 
-    # Get URLs that already have activities for today
-    urls_to_check = [url for url, _, _ in matched_entries]
+    # Get contract_ids that already have activities for today
+    contract_ids_to_check = [contract_id for contract_id, _, _ in matched_entries]
     existing_activities_stmt = (
-        select(EmployeeActivity.url)
+        select(EmployeeActivity.purchased_saas_id)
         .where(and_(
-            EmployeeActivity.user_id == user.user_id,
-            EmployeeActivity.url.in_(urls_to_check),
+            EmployeeActivity.employee_id == user.employee_id,
+            EmployeeActivity.purchased_saas_id.in_(contract_ids_to_check),
             func.date(EmployeeActivity.date) == today
         ))
     )
-    existing_urls = {row[0] for row in db.execute(existing_activities_stmt)}
+    existing_contract_ids = {row[0] for row in db.execute(existing_activities_stmt)}
 
-    # Create new activities for URLs not yet recorded today
+    # Create new activities for contract_ids not yet recorded today
     new_activities = [
         EmployeeActivity(
-            user_id=user.user_id,
-            url=url,
+            employee_id=user.employee_id,
+            purchased_saas_id=contract_id,
             browser=browser,
             date=datetime.fromtimestamp(timestamp / 1000, tz=timezone.utc)
         )
-        for url, browser, timestamp in matched_entries
-        if url not in existing_urls
+        for contract_id, browser, timestamp in matched_entries
+        if contract_id not in existing_contract_ids
     ]
 
     # Bulk insert new activities if any

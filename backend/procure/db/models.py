@@ -1,58 +1,117 @@
-from sqlalchemy import Column, Integer, String, DateTime, ForeignKey
-from sqlalchemy.orm import relationship
-from datetime import datetime, timezone
+from sqlalchemy import (
+    Column,
+    Integer,
+    String,
+    DateTime,
+    ForeignKey,
+    UniqueConstraint,
+    func
+)
+from sqlalchemy.orm import relationship, foreign
+from datetime import timezone
 from .engine import Base
+
+# Core Entity: Organization
+class Organization(Base):
+    __tablename__ = "organizations"
+
+    organization_id = Column(String(36), primary_key=True)
+    name            = Column(String(255), nullable=False)
+
+    employees = relationship(
+        "Employee",
+        back_populates="organization",
+        cascade="all, delete"
+    )
+    purchased_saases = relationship(
+        "PurchasedSaas",
+        back_populates="organization",
+        cascade="all, delete-orphan"
+    )
+
 
 # Core Entity: Employee (formerly User)
 class Employee(Base):
     __tablename__ = "employees"
 
-    user_id = Column(Integer, primary_key=True)
-    email = Column(String, unique=True, nullable=False)
-    password_hash = Column(String, nullable=True)
-    company_name = Column(String, nullable=True)
-    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), nullable=False)
+    employee_id     = Column(String(36), primary_key=True)
+    email           = Column(String(255), unique=True, nullable=False)
+    password_hash   = Column(String(255), nullable=True)
+    organization_id = Column(String(36), ForeignKey("organizations.organization_id"), nullable=True)
+    role            = Column(String(50), nullable=False, default="member")
+    created_at      = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
 
-    activities = relationship("EmployeeActivity", back_populates="employee", cascade="all, delete-orphan")
-    purchased_saases = relationship("PurchasedSaas", back_populates="owner_employee", cascade="all, delete-orphan")
-    device_tokens = relationship("EmployeeDeviceToken", back_populates="employee", cascade="all, delete-orphan")
+    organization = relationship(
+        "Organization",
+        back_populates="employees"
+    )
+    activities = relationship(
+        "EmployeeActivity",
+        back_populates="employee",
+        cascade="all, delete"
+    )
+    purchased_saases = relationship(
+        "PurchasedSaas",
+        back_populates="owner_employee",
+        primaryjoin="Employee.employee_id == foreign(PurchasedSaas.owner)",
+        foreign_keys="[PurchasedSaas.owner]",
+        cascade="all, delete-orphan"
+    )
+    device_tokens = relationship(
+        "EmployeeDeviceToken",
+        back_populates="employee",
+        cascade="all, delete-orphan"
+    )
 
 
 # Core Entity: Purchased SaaS
 class PurchasedSaas(Base):
     __tablename__ = "purchased_saas"
+    __table_args__ = (
+        UniqueConstraint("organization_id", "url", name="uq_org_url"),
+    )
 
-    contract_id = Column(Integer, primary_key=True)
-    saas_name = Column(String, nullable=False)
-    url = Column(String, unique=True, nullable=False)  # Enforce uniqueness for FK reference
-    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
-    expire_at = Column(DateTime, nullable=True)
-    owner = Column(Integer, ForeignKey("employees.user_id"), nullable=False)
+    contract_id     = Column(Integer, primary_key=True)
+    saas_name       = Column(String(255), nullable=False)
+    url             = Column(String(2083), nullable=False)
+    created_at      = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
+    expire_at       = Column(DateTime(timezone=True), nullable=True)
+    owner           = Column(String(36), ForeignKey("employees.employee_id"), nullable=False)
+    organization_id = Column(String(36), ForeignKey("organizations.organization_id"), nullable=True)
 
-    owner_employee = relationship("Employee", back_populates="purchased_saases")
+    owner_employee = relationship(
+        "Employee",
+        back_populates="purchased_saases",
+        foreign_keys=[owner]
+    )
+    organization = relationship(
+        "Organization",
+        back_populates="purchased_saases"
+    )
 
 
 # Core Entity: Employee Activity
 class EmployeeActivity(Base):
-    __tablename__ = "employee_activity"
+    __tablename__ = "employee_activities"
 
-    id = Column(Integer, primary_key=True)
-    user_id = Column(Integer, ForeignKey("employees.user_id"), nullable=False)
-    browser = Column(String, nullable=False)
-    url = Column(String, ForeignKey("purchased_saas.url"), nullable=False)  # FK to purchased SaaS
-    date = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+    activity_id       = Column(Integer, primary_key=True)
+    employee_id       = Column(String(36), ForeignKey("employees.employee_id"), nullable=False)
+    purchased_saas_id = Column(Integer, ForeignKey("purchased_saas.contract_id"), nullable=False)
+    browser           = Column(String(100), nullable=False)
+    date              = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
 
-    employee = relationship("Employee", back_populates="activities")
+    employee       = relationship("Employee", back_populates="activities")
+    purchased_saas = relationship("PurchasedSaas")
 
 
 # Core Entity: Employee Device Token
 class EmployeeDeviceToken(Base):
     __tablename__ = "employee_device_tokens"
 
-    token_id = Column(Integer, primary_key=True)
-    user_id = Column(Integer, ForeignKey("employees.user_id"), nullable=False)
-    device_id = Column(String, nullable=False)
-    token = Column(String, unique=True, nullable=False)
-    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), nullable=False)
+    token_id    = Column(Integer, primary_key=True)
+    employee_id = Column(String(36), ForeignKey("employees.employee_id"), nullable=False)
+    device_id   = Column(String(255), nullable=False)
+    token       = Column(String(255), unique=True, nullable=False)
+    created_at  = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
 
-    employee = relationship("Employee", back_populates="device_tokens")
+    employee    = relationship("Employee", back_populates="device_tokens")

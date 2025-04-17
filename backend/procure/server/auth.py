@@ -27,15 +27,16 @@ def get_db():
 class CreateUserRequest(BaseModel):
     email: EmailStr
     password: str = Field(..., min_length=8)
-    company_name: str = Field(..., pattern=r'^\d{6}$')
+    organization_id: str = Field(..., pattern=r'^\d{6}$')
     device_id: str
 
-    @field_validator('company_name')
+    @field_validator('organization_id')
     @classmethod
-    def validate_company_name(cls, v):
-        """Validate company_name is a 6-digit number"""
+    def validate_organization_id(cls, v):
+        """Validate organization_id is a 6-digit number"""
         if not v.isdigit() or len(v) != 6:
             raise ValueError('Organization Code must be a 6-digit number')
+        # Keep as string for storage
         return v
 
     @field_validator('password')
@@ -53,9 +54,9 @@ class CreateUserRequest(BaseModel):
         return v
 
 class CreateUserResponse(BaseModel):
-    user_id: int
+    employee_id: str
     email: str
-    company_name: str
+    organization_id: str
     device_token: str
 
 class SignInRequest(BaseModel):
@@ -65,9 +66,10 @@ class SignInRequest(BaseModel):
     device_id: str
 
 class SignInResponse(BaseModel):
-    user_id: int
+    employee_id: str
     email: str
-    company_name: Optional[str]
+    organization_id: Optional[str]
+    role: str
     device_token: str
 
 # Helper functions
@@ -153,28 +155,31 @@ async def create_user(
                 detail=f"Employee with email {user_data.email} already exists"
             )
 
-        # Create new employee
+        # Create new employee and device token
         hashed_password = hash_password(user_data.password)
         new_user = db_auth.create_employee(
             db,
             user_data.email,
             hashed_password,
-            user_data.company_name
+            user_data.organization_id
         )
 
         # Generate and store device token
         device_token = generate_device_token()
         db_auth.create_device_token(
             db,
-            new_user.user_id,
+            new_user.employee_id,
             user_data.device_id,
             device_token
         )
 
+        # Commit the transaction
+        db.commit()
+
         return CreateUserResponse(
-            user_id=new_user.user_id,
+            employee_id=new_user.employee_id,
             email=new_user.email,
-            company_name=new_user.company_name,
+            organization_id=new_user.organization_id,
             device_token=device_token
         )
 
@@ -228,7 +233,7 @@ async def sign_in(
         # If we authenticated with email/password, generate a new device token
         if not device_token:
             # Check if a token already exists for this device
-            existing_token = db_auth.get_device_token(db, user.user_id, sign_in_data.device_id)
+            existing_token = db_auth.get_device_token(db, user.employee_id, sign_in_data.device_id)
 
             if existing_token:
                 # Update the existing token
@@ -239,15 +244,19 @@ async def sign_in(
                 device_token = generate_device_token()
                 db_auth.create_device_token(
                     db,
-                    user.user_id,
+                    user.employee_id,
                     sign_in_data.device_id,
                     device_token
                 )
 
+            # Commit the transaction
+            db.commit()
+
         return SignInResponse(
-            user_id=user.user_id,
+            employee_id=user.employee_id,
             email=user.email,
-            company_name=user.company_name,
+            organization_id=user.organization_id,
+            role=user.role,
             device_token=device_token
         )
 

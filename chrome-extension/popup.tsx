@@ -8,7 +8,7 @@ export default function IndexPopup() {
   const { user, isLoading, error, onLogin, onSignUp, onLogout } = useAuth()
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
-  const [companyName, setCompanyName] = useState("")
+  const [organizationId, setOrganizationId] = useState("")
   // Role field removed
   const [isSignUp, setIsSignUp] = useState(false)
 
@@ -16,11 +16,11 @@ export default function IndexPopup() {
     e.preventDefault()
     if (isSignUp) {
       // Validate organization code
-      if (companyName.length !== 6 || !/^\d{6}$/.test(companyName)) {
+      if (organizationId.length !== 6 || !/^\d{6}$/.test(organizationId)) {
         alert('Please enter a valid 6-digit organization code')
         return
       }
-      onSignUp(email, password, companyName)
+      onSignUp(email, password, organizationId)
     } else {
       onLogin(email, password)
     }
@@ -74,16 +74,16 @@ export default function IndexPopup() {
                 {isSignUp && (
                   <>
                     <div className="form-group">
-                      <label htmlFor="companyName">Organization Code</label>
+                      <label htmlFor="organizationId">Organization Code</label>
                       <input
-                        id="companyName"
+                        id="organizationId"
                         type="text"
                         placeholder="6-digit code"
-                        value={companyName}
+                        value={organizationId}
                         onChange={(e) => {
                           // Only allow digits and limit to 6 characters
                           const value = e.target.value.replace(/\D/g, '').slice(0, 6);
-                          setCompanyName(value);
+                          setOrganizationId(value);
                         }}
                         className="form-input"
                       />
