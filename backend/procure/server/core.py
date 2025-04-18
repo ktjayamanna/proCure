@@ -4,7 +4,7 @@ from sqlalchemy.exc import SQLAlchemyError
 # No type imports needed
 import logging
 
-from procure.server.auth import get_current_user_email
+from procure.server.auth.dependencies import get_current_user_email
 from procure.server.models import UrlVisitLog, UrlVisitResponse
 from procure.db.engine import SessionLocal
 from procure.db import core as db_core

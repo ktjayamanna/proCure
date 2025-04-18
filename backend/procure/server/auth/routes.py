@@ -1,173 +1,24 @@
 import logging
-import secrets
 import uuid
-import re
-from typing import Optional
-from fastapi import APIRouter, Depends, HTTPException, Request, Response, status
+from fastapi import APIRouter, Depends, HTTPException, Response, status
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import SQLAlchemyError
-from pydantic import BaseModel, EmailStr, Field, field_validator
+from typing import Optional
 
-from fastapi_users import schemas
-from fastapi_users.password import PasswordHelper
-from fastapi_users.jwt import generate_jwt, decode_jwt
-
-from procure.db.engine import SessionLocal
 from procure.db.models import User
 from procure.db import auth as db_auth
-
-import os
-from dotenv import load_dotenv
-
-# Load environment variables
-load_dotenv(".vscode/.env")
-
-# Get JWT secret from environment or use a default for development
-SECRET = os.getenv("JWT_SECRET", "SECRET_KEY_FOR_JWT_PLEASE_CHANGE_IN_PRODUCTION")
-# Cookie settings
-COOKIE_NAME = "procure_auth"
-COOKIE_MAX_AGE = 3600 * 24 * 30  # 30 days
+from procure.server.auth.dependencies import get_db
+from procure.server.auth.schemas import (
+    CreateUserRequest, CreateUserResponse, 
+    SignInRequest, SignInResponse
+)
+from procure.server.auth.utils import (
+    hash_password, verify_password, generate_device_token, 
+    generate_jwt_token, COOKIE_NAME, COOKIE_MAX_AGE
+)
 
 # Set up logging
 logger = logging.getLogger(__name__)
-
-# Database session dependency
-def get_db():
-    db = SessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
-
-# Pydantic models for request/response
-class CreateUserRequest(BaseModel):
-    email: EmailStr
-    password: str = Field(..., min_length=8)
-    device_id: str
-    role: str = "member"  # Default to member, can be "admin" or "member"
-
-    @field_validator('password')
-    @classmethod
-    def password_strength(cls, v):
-        """Validate password strength"""
-        if len(v) < 8:
-            raise ValueError('Password must be at least 8 characters long')
-        if not re.search(r'[A-Z]', v):
-            raise ValueError('Password must contain at least one uppercase letter')
-        if not re.search(r'[a-z]', v):
-            raise ValueError('Password must contain at least one lowercase letter')
-        if not re.search(r'[0-9]', v):
-            raise ValueError('Password must contain at least one number')
-        return v
-
-class CreateUserResponse(BaseModel):
-    id: str
-    email: str
-    organization_id: str
-    device_token: str
-
-class SignInRequest(BaseModel):
-    email: Optional[EmailStr] = None
-    password: Optional[str] = None
-    device_token: Optional[str] = None
-    device_id: str
-
-class SignInResponse(BaseModel):
-    id: str
-    email: str
-    organization_id: Optional[str]
-    role: str
-    device_token: str
-
-# Helper functions
-def get_token_from_request(request: Request) -> Optional[str]:
-    """Extract the device token from the Authorization header."""
-    authorization = request.headers.get("Authorization")
-    if not authorization or not authorization.startswith("Bearer "):
-        return None
-    return authorization.replace("Bearer ", "")
-
-async def get_current_user_email(request: Request, db: Session = Depends(get_db)) -> str:
-    """Get the current user's email from the device token in the request or JWT cookie."""
-
-    # First try to get token from Authorization header
-    token = get_token_from_request(request)
-
-    # If no token in header, try to get from cookie
-    if not token:
-        cookies = request.cookies
-        jwt_token = cookies.get(COOKIE_NAME)
-
-        if jwt_token:
-            # Validate JWT token
-            try:
-                payload = decode_jwt(jwt_token, SECRET, ["fastapi-users:auth"])
-
-                if payload and "sub" in payload:
-                    # Get user by ID from JWT token
-                    user_id = payload["sub"]
-                    user = db_auth.get_user_by_id(db, user_id)
-                    if user:
-                        return user.email
-            except Exception as e:
-                logger.error(f"Error validating JWT token: {str(e)}")
-                # Continue to try device token authentication
-
-        # If no valid JWT token, require device token
-        if not token:
-            raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="Authentication token is missing"
-            )
-
-    try:
-        # Authenticate with device token using the database module
-        success, user = db_auth.authenticate_with_token(db, token)
-
-        if not success or not user:
-            raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="Invalid authentication token"
-            )
-
-        return user.email
-
-    except SQLAlchemyError as e:
-        logger.error(f"Database error during authentication: {str(e)}")
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Database error during authentication: {str(e)}"
-        )
-    except Exception as e:
-        if isinstance(e, HTTPException):
-            raise
-        logger.error(f"Error during authentication: {str(e)}")
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Error during authentication: {str(e)}"
-        )
-
-def generate_device_token():
-    """Generate a secure random token for device authentication"""
-    return secrets.token_urlsafe(32)  # 256 bits of entropy
-
-def hash_password(password: str) -> str:
-    """Hash a password for storing"""
-    # Use FastAPI-Users password helper
-    password_helper = PasswordHelper()
-    return password_helper.hash(password)
-
-def generate_jwt_token(user_id: str) -> str:
-    """Generate a JWT token for the user"""
-    # Create the JWT token
-    data = {"sub": user_id, "aud": ["fastapi-users:auth"]}
-    return generate_jwt(data, SECRET, COOKIE_MAX_AGE)
-
-def verify_password(plain_password: str, hashed_password: str) -> bool:
-    """Verify a stored password against a provided password"""
-    password_helper = PasswordHelper()
-    verified, _ = password_helper.verify_and_update(plain_password, hashed_password)
-    return verified
 
 # Create router
 router = APIRouter(prefix="/api/v1/auth", tags=["auth"])
@@ -402,7 +253,3 @@ async def logout(response: Response):
         samesite="lax",
     )
     return {"detail": "Successfully logged out"}
-
-def register_auth_routes(app):
-    """Register authentication routes with the main FastAPI app"""
-    app.include_router(router)
