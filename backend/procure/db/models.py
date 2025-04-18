@@ -1,3 +1,6 @@
+from typing import Optional
+from fastapi import Depends
+from fastapi_users.db import SQLAlchemyBaseUserTable, SQLAlchemyUserDatabase
 from sqlalchemy import (
     Column,
     Integer,
@@ -5,11 +8,12 @@ from sqlalchemy import (
     DateTime,
     ForeignKey,
     UniqueConstraint,
+    Boolean,
     func
 )
 from sqlalchemy.orm import relationship, foreign
-from datetime import timezone
-from .engine import Base
+from sqlalchemy.ext.asyncio import AsyncSession
+from .engine import Base, SessionLocal
 
 # Core Entity: Organization
 class Organization(Base):
@@ -20,8 +24,8 @@ class Organization(Base):
     admins_remaining = Column(Integer, nullable=False, default=1)
     members_remaining = Column(Integer, nullable=False, default=1000)
 
-    employees = relationship(
-        "Employee",
+    users = relationship(
+        "User",
         back_populates="organization",
         cascade="all, delete"
     )
@@ -32,36 +36,40 @@ class Organization(Base):
     )
 
 
-# Core Entity: Employee (formerly User)
-class Employee(Base):
-    __tablename__ = "employees"
+# FastAPI-Users model
+class User(SQLAlchemyBaseUserTable[str], Base):
+    __tablename__ = "users"
 
-    employee_id     = Column(String(36), primary_key=True)
-    email           = Column(String(255), unique=True, nullable=False)
-    password_hash   = Column(String(255), nullable=True)
+    id = Column(String(36), primary_key=True)
+    email = Column(String(255), unique=True, nullable=False)
+    hashed_password = Column(String(255), nullable=True)
+    is_active = Column(Boolean, default=True, nullable=False)
+    is_superuser = Column(Boolean, default=False, nullable=False)
+    is_verified = Column(Boolean, default=False, nullable=False)
+
+    # Additional fields
     organization_id = Column(String(36), ForeignKey("organizations.organization_id"), nullable=True)
-    role            = Column(String(50), nullable=False, default="member")
-    created_at      = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
+    role = Column(String(50), nullable=False, default="member")
+    created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
 
+    # Relationships
     organization = relationship(
         "Organization",
-        back_populates="employees"
+        back_populates="users"
     )
     activities = relationship(
-        "EmployeeActivity",
-        back_populates="employee",
+        "UserActivity",
+        back_populates="user",
         cascade="all, delete"
     )
     purchased_saases = relationship(
         "PurchasedSaas",
-        back_populates="owner_employee",
-        primaryjoin="Employee.employee_id == foreign(PurchasedSaas.owner)",
-        foreign_keys="[PurchasedSaas.owner]",
+        back_populates="owner",
         cascade="all, delete-orphan"
     )
     device_tokens = relationship(
-        "EmployeeDeviceToken",
-        back_populates="employee",
+        "UserDeviceToken",
+        back_populates="user",
         cascade="all, delete-orphan"
     )
 
@@ -78,13 +86,13 @@ class PurchasedSaas(Base):
     url             = Column(String(2083), nullable=False)
     created_at      = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
     expire_at       = Column(DateTime(timezone=True), nullable=True)
-    owner           = Column(String(36), ForeignKey("employees.employee_id"), nullable=False)
+    owner_id        = Column(String(36), ForeignKey("users.id"), nullable=False)
     organization_id = Column(String(36), ForeignKey("organizations.organization_id"), nullable=True)
 
-    owner_employee = relationship(
-        "Employee",
+    owner = relationship(
+        "User",
         back_populates="purchased_saases",
-        foreign_keys=[owner]
+        foreign_keys=[owner_id]
     )
     organization = relationship(
         "Organization",
@@ -92,28 +100,42 @@ class PurchasedSaas(Base):
     )
 
 
-# Core Entity: Employee Activity
-class EmployeeActivity(Base):
-    __tablename__ = "employee_activities"
+# User Activity
+class UserActivity(Base):
+    __tablename__ = "user_activities"
 
     activity_id       = Column(Integer, primary_key=True)
-    employee_id       = Column(String(36), ForeignKey("employees.employee_id"), nullable=False)
+    user_id           = Column(String(36), ForeignKey("users.id"), nullable=False)
     purchased_saas_id = Column(Integer, ForeignKey("purchased_saas.contract_id"), nullable=False)
     browser           = Column(String(100), nullable=False)
     date              = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
 
-    employee       = relationship("Employee", back_populates="activities")
+    user           = relationship("User", back_populates="activities")
     purchased_saas = relationship("PurchasedSaas")
 
 
-# Core Entity: Employee Device Token
-class EmployeeDeviceToken(Base):
-    __tablename__ = "employee_device_tokens"
+# User Device Token
+class UserDeviceToken(Base):
+    __tablename__ = "user_device_tokens"
 
     token_id    = Column(Integer, primary_key=True)
-    employee_id = Column(String(36), ForeignKey("employees.employee_id"), nullable=False)
+    user_id     = Column(String(36), ForeignKey("users.id"), nullable=False)
     device_id   = Column(String(255), nullable=False)
     token       = Column(String(255), unique=True, nullable=False)
     created_at  = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
 
-    employee    = relationship("Employee", back_populates="device_tokens")
+    user        = relationship("User", back_populates="device_tokens")
+
+
+# Dependency to get the database session
+def get_db_session():
+    db = SessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()
+
+
+# Get SQLAlchemy user database
+def get_user_db(session: AsyncSession = Depends(get_db_session)):
+    yield SQLAlchemyUserDatabase(session, User)

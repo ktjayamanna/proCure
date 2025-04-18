@@ -5,7 +5,7 @@ from sqlalchemy import select, and_
 from sqlalchemy.orm import Session
 from typing import Optional, Tuple
 
-from procure.db.models import Employee, EmployeeDeviceToken, Organization
+from procure.db.models import Organization, User, UserDeviceToken
 
 # Base62 charset (URL-safe, no special chars)
 BASE62 = string.ascii_letters + string.digits  # A-Z a-z 0-9
@@ -17,27 +17,27 @@ def generate_org_id():
 
 # Database operations for authentication functionality
 
-def get_employee_by_email(db: Session, email: str) -> Optional[Employee]:
-    """Get an employee by email."""
-    stmt = select(Employee).where(Employee.email == email)
+def get_user_token_record(db: Session, token: str) -> Optional[UserDeviceToken]:
+    """Get a user device token record by token value."""
+    stmt = select(UserDeviceToken).where(UserDeviceToken.token == token)
     return db.scalars(stmt).one_or_none()
 
-def get_employee_by_id(db: Session, employee_id: str) -> Optional[Employee]:
-    """Get an employee by ID."""
-    stmt = select(Employee).where(Employee.employee_id == employee_id)
+def get_user_by_id(db: Session, user_id: str) -> Optional[User]:
+    """Get a user by ID."""
+    stmt = select(User).where(User.id == user_id)
     return db.scalars(stmt).one_or_none()
 
-def get_token_record(db: Session, token: str) -> Optional[EmployeeDeviceToken]:
-    """Get a device token record by token value."""
-    stmt = select(EmployeeDeviceToken).where(EmployeeDeviceToken.token == token)
+def get_user_by_email(db: Session, email: str) -> Optional[User]:
+    """Get a user by email."""
+    stmt = select(User).where(User.email == email)
     return db.scalars(stmt).one_or_none()
 
-def get_device_token(db: Session, employee_id: str, device_id: str) -> Optional[EmployeeDeviceToken]:
+def get_user_device_token(db: Session, user_id: str, device_id: str) -> Optional[UserDeviceToken]:
     """Get a device token for a user and device."""
-    stmt = select(EmployeeDeviceToken).where(
+    stmt = select(UserDeviceToken).where(
         and_(
-            EmployeeDeviceToken.employee_id == employee_id,
-            EmployeeDeviceToken.device_id == device_id
+            UserDeviceToken.user_id == user_id,
+            UserDeviceToken.device_id == device_id
         )
     )
     return db.scalars(stmt).one_or_none()
@@ -69,31 +69,34 @@ def create_organization(db: Session, name: str, organization_id: Optional[str] =
 
     return new_organization
 
-def create_employee(db: Session, email: str, password_hash: str, organization_id: str, role: str = "member") -> Employee:
-    """Create a new employee."""
+def create_user(db: Session, email: str, password_hash: str, organization_id: str, role: str = "member") -> User:
+    """Create a new user."""
     # Check if organization exists
     organization = get_organization_by_id(db, organization_id)
     if not organization:
         raise ValueError(f"Organization with ID {organization_id} not found")
 
-    employee_id = str(uuid.uuid4())
-    new_employee = Employee(
-        employee_id=employee_id,
+    user_id = str(uuid.uuid4())
+    new_user = User(
+        id=user_id,
         email=email,
-        password_hash=password_hash,
+        hashed_password=password_hash,
+        is_active=True,
+        is_verified=False,
+        is_superuser=role == "admin",
         organization_id=organization_id,
         role=role
     )
 
-    db.add(new_employee)
+    db.add(new_user)
     db.flush()
 
-    return new_employee
+    return new_user
 
-def create_device_token(db: Session, employee_id: str, device_id: str, token: str) -> EmployeeDeviceToken:
+def create_device_token(db: Session, user_id: str, device_id: str, token: str) -> UserDeviceToken:
     """Create a new device token."""
-    new_token = EmployeeDeviceToken(
-        employee_id=employee_id,
+    new_token = UserDeviceToken(
+        user_id=user_id,
         device_id=device_id,
         token=token
     )
@@ -102,27 +105,19 @@ def create_device_token(db: Session, employee_id: str, device_id: str, token: st
 
     return new_token
 
-def update_device_token(db: Session, token_record: EmployeeDeviceToken, new_token: str) -> EmployeeDeviceToken:
+def update_device_token(db: Session, token_record: UserDeviceToken, new_token: str) -> UserDeviceToken:
     """Update an existing device token."""
     token_record.token = new_token
     return token_record
 
-def authenticate_with_token(db: Session, token: str) -> Tuple[bool, Optional[Employee]]:
+def authenticate_with_token(db: Session, token: str) -> Tuple[bool, Optional[User]]:
     """Authenticate a user with a device token."""
-    token_record = get_token_record(db, token)
+    token_record = get_user_token_record(db, token)
     if not token_record:
         return False, None
 
-    user = get_employee_by_id(db, token_record.employee_id)
+    user = get_user_by_id(db, token_record.user_id)
     if not user:
-        return False, None
-
-    return True, user
-
-def authenticate_with_credentials(db: Session, email: str, password_hash: str) -> Tuple[bool, Optional[Employee]]:
-    """Authenticate a user with email and password."""
-    user = get_employee_by_email(db, email)
-    if not user or user.password_hash != password_hash:
         return False, None
 
     return True, user

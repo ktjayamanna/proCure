@@ -3,13 +3,13 @@ from sqlalchemy.orm import Session
 from datetime import datetime, timezone
 from typing import List, Dict, Any, Optional, Tuple
 
-from procure.db.models import Employee, PurchasedSaas, EmployeeActivity, Organization
+from procure.db.models import PurchasedSaas, Organization, User, UserActivity
 
 # Database operations for core functionality
 
-def get_employee_by_email(db: Session, email: str) -> Optional[Employee]:
-    """Get an employee by email."""
-    stmt = select(Employee).where(Employee.email == email)
+def get_user_by_email(db: Session, email: str) -> Optional[User]:
+    """Get a user by email."""
+    stmt = select(User).where(User.email == email)
     return db.scalars(stmt).one_or_none()
 
 def get_organization_by_id(db: Session, organization_id: str) -> Optional[Organization]:
@@ -30,17 +30,17 @@ def process_url_visits(
     """Process URL visits and record activities.
 
     This function performs most operations at the database level for efficiency:
-    1. Finds the employee by email
+    1. Finds the user by email
     2. Identifies which URLs in the entries match purchased SaaS URLs
     3. Checks which matched URLs don't already have activities for today
     4. Creates new activities for those URLs
     """
     # Get user
-    user = get_employee_by_email(db, email)
+    user = get_user_by_email(db, email)
     if not user:
         return {
             "success": False,
-            "error": f"Employee with email {email} not found",
+            "error": f"User with email {email} not found",
             "status_code": 404
         }
 
@@ -87,19 +87,19 @@ def process_url_visits(
     # Get contract_ids that already have activities for today
     contract_ids_to_check = [contract_id for contract_id, _, _ in matched_entries]
     existing_activities_stmt = (
-        select(EmployeeActivity.purchased_saas_id)
+        select(UserActivity.purchased_saas_id)
         .where(and_(
-            EmployeeActivity.employee_id == user.employee_id,
-            EmployeeActivity.purchased_saas_id.in_(contract_ids_to_check),
-            func.date(EmployeeActivity.date) == today
+            UserActivity.user_id == user.id,
+            UserActivity.purchased_saas_id.in_(contract_ids_to_check),
+            func.date(UserActivity.date) == today
         ))
     )
     existing_contract_ids = {row[0] for row in db.execute(existing_activities_stmt)}
 
     # Create new activities for contract_ids not yet recorded today
     new_activities = [
-        EmployeeActivity(
-            employee_id=user.employee_id,
+        UserActivity(
+            user_id=user.id,
             purchased_saas_id=contract_id,
             browser=browser,
             date=datetime.fromtimestamp(timestamp / 1000, tz=timezone.utc)

@@ -1,16 +1,32 @@
 import logging
 import secrets
-import hashlib
+import uuid
 import re
 from typing import Optional
-from fastapi import APIRouter, Depends, HTTPException, Request, status
+from fastapi import APIRouter, Depends, HTTPException, Request, Response, status
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import SQLAlchemyError
 from pydantic import BaseModel, EmailStr, Field, field_validator
 
+from fastapi_users import FastAPIUsers, schemas
+from fastapi_users.authentication import AuthenticationBackend, BearerTransport, CookieTransport, JWTStrategy
+from fastapi_users.password import PasswordHelper
+
 from procure.db.engine import SessionLocal
-from procure.db.models import Employee
+from procure.db.models import Organization, User, UserDeviceToken
 from procure.db import auth as db_auth
+
+import os
+from dotenv import load_dotenv
+
+# Load environment variables
+load_dotenv(".vscode/.env")
+
+# Get JWT secret from environment or use a default for development
+SECRET = os.getenv("JWT_SECRET", "SECRET_KEY_FOR_JWT_PLEASE_CHANGE_IN_PRODUCTION")
+# Cookie settings
+COOKIE_NAME = "procure_auth"
+COOKIE_MAX_AGE = 3600 * 24 * 30  # 30 days
 
 # Set up logging
 logger = logging.getLogger(__name__)
@@ -45,7 +61,7 @@ class CreateUserRequest(BaseModel):
         return v
 
 class CreateUserResponse(BaseModel):
-    employee_id: str
+    id: str
     email: str
     organization_id: str
     device_token: str
@@ -57,7 +73,7 @@ class SignInRequest(BaseModel):
     device_id: str
 
 class SignInResponse(BaseModel):
-    employee_id: str
+    id: str
     email: str
     organization_id: Optional[str]
     role: str
@@ -72,17 +88,41 @@ def get_token_from_request(request: Request) -> Optional[str]:
     return authorization.replace("Bearer ", "")
 
 async def get_current_user_email(request: Request, db: Session = Depends(get_db)) -> str:
-    """Get the current user's email from the device token in the request."""
+    """Get the current user's email from the device token in the request or JWT cookie."""
 
+    # First try to get token from Authorization header
     token = get_token_from_request(request)
+
+    # If no token in header, try to get from cookie
     if not token:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Authentication token is missing"
-        )
+        cookies = request.cookies
+        jwt_token = cookies.get(COOKIE_NAME)
+
+        if jwt_token:
+            # Validate JWT token
+            try:
+                jwt_strategy = JWTStrategy(secret=SECRET, lifetime_seconds=COOKIE_MAX_AGE)
+                payload = jwt_strategy.read_token(jwt_token)
+
+                if payload and "sub" in payload:
+                    # Get user by ID from JWT token
+                    user_id = payload["sub"]
+                    user = db_auth.get_user_by_id(db, user_id)
+                    if user:
+                        return user.email
+            except Exception as e:
+                logger.error(f"Error validating JWT token: {str(e)}")
+                # Continue to try device token authentication
+
+        # If no valid JWT token, require device token
+        if not token:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Authentication token is missing"
+            )
 
     try:
-        # Authenticate with token using the database module
+        # Authenticate with device token using the database module
         success, user = db_auth.authenticate_with_token(db, token)
 
         if not success or not user:
@@ -114,13 +154,15 @@ def generate_device_token():
 
 def hash_password(password: str) -> str:
     """Hash a password for storing"""
-    # In a production environment, use a proper password hashing library like passlib
-    # This is a simple example using hashlib
-    return hashlib.sha256(password.encode()).hexdigest()
+    # Use FastAPI-Users password helper
+    password_helper = PasswordHelper()
+    return password_helper.hash(password)
 
 def verify_password(plain_password: str, hashed_password: str) -> bool:
     """Verify a stored password against a provided password"""
-    return hash_password(plain_password) == hashed_password
+    password_helper = PasswordHelper()
+    verified, _ = password_helper.verify_and_update(plain_password, hashed_password)
+    return verified
 
 # Create router
 router = APIRouter(prefix="/api/v1/auth", tags=["auth"])
@@ -134,12 +176,12 @@ async def create_user(
     Create a new user with the provided information.
     """
     try:
-        # Check if employee with this email already exists
-        existing_user = db_auth.get_employee_by_email(db, user_data.email)
+        # Check if user with this email already exists
+        existing_user = db_auth.get_user_by_email(db, user_data.email)
         if existing_user:
             raise HTTPException(
                 status_code=status.HTTP_409_CONFLICT,
-                detail=f"Employee with email {user_data.email} already exists"
+                detail=f"User with email {user_data.email} already exists"
             )
 
         # Create new employee and device token
@@ -182,9 +224,9 @@ async def create_user(
         else:  # member
             organization.members_remaining -= 1
 
-        # Create the employee
+        # Create the user
         try:
-            new_user = db_auth.create_employee(
+            new_user = db_auth.create_user(
                 db,
                 user_data.email,
                 hashed_password,
@@ -204,7 +246,7 @@ async def create_user(
         device_token = generate_device_token()
         db_auth.create_device_token(
             db,
-            new_user.employee_id,
+            new_user.id,
             user_data.device_id,
             device_token
         )
@@ -213,7 +255,7 @@ async def create_user(
         db.commit()
 
         return CreateUserResponse(
-            employee_id=new_user.employee_id,
+            id=new_user.id,
             email=new_user.email,
             organization_id=new_user.organization_id,
             device_token=device_token
@@ -243,13 +285,14 @@ async def create_user(
 @router.post("/sign-in", response_model=SignInResponse)
 async def sign_in(
     sign_in_data: SignInRequest,
+    response: Response,
     db: Session = Depends(get_db)
 ):
     """
     Sign in a user using either email/password or a device token.
     """
     try:
-        user: Optional[Employee] = None
+        user: Optional[User] = None
         device_token = sign_in_data.device_token
         success = False
 
@@ -259,14 +302,23 @@ async def sign_in(
 
         # If device token authentication failed, try email/password
         if not success and not user and sign_in_data.email and sign_in_data.password:
-            hashed_password = hash_password(sign_in_data.password)
-            success, user = db_auth.authenticate_with_credentials(db, sign_in_data.email, hashed_password)
+            # Get user by email
+            user = db_auth.get_user_by_email(db, sign_in_data.email)
 
-            if not success or not user:
+            if not user:
                 raise HTTPException(
                     status_code=status.HTTP_401_UNAUTHORIZED,
                     detail="Invalid email or password"
                 )
+
+            # Verify password
+            if not verify_password(sign_in_data.password, user.hashed_password):
+                raise HTTPException(
+                    status_code=status.HTTP_401_UNAUTHORIZED,
+                    detail="Invalid email or password"
+                )
+
+            success = True
 
         if not user:
             raise HTTPException(
@@ -277,7 +329,7 @@ async def sign_in(
         # If we authenticated with email/password, generate a new device token
         if not device_token:
             # Check if a token already exists for this device
-            existing_token = db_auth.get_device_token(db, user.employee_id, sign_in_data.device_id)
+            existing_token = db_auth.get_user_device_token(db, user.id, sign_in_data.device_id)
 
             if existing_token:
                 # Update the existing token
@@ -288,7 +340,7 @@ async def sign_in(
                 device_token = generate_device_token()
                 db_auth.create_device_token(
                     db,
-                    user.employee_id,
+                    user.id,
                     sign_in_data.device_id,
                     device_token
                 )
@@ -296,8 +348,23 @@ async def sign_in(
             # Commit the transaction
             db.commit()
 
+        # Set JWT cookie for browser-based authentication
+        jwt_strategy = JWTStrategy(secret=SECRET, lifetime_seconds=COOKIE_MAX_AGE)
+        token_data = {"sub": user.id, "email": user.email}
+        token = jwt_strategy.write_token(token_data)
+
+        # Set HTTP-only cookie
+        cookie_transport = CookieTransport(
+            cookie_name=COOKIE_NAME,
+            cookie_max_age=COOKIE_MAX_AGE,
+            cookie_secure=False,  # Set to True in production with HTTPS
+            cookie_httponly=True,
+            cookie_samesite="lax",
+        )
+        cookie_transport.set_cookie(response, token)
+
         return SignInResponse(
-            employee_id=user.employee_id,
+            id=user.id,
             email=user.email,
             organization_id=user.organization_id,
             role=user.role,
@@ -318,6 +385,19 @@ async def sign_in(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Error during sign-in: {str(e)}"
         )
+
+@router.post("/logout")
+async def logout(response: Response):
+    """Log out the current user by clearing the auth cookie"""
+    cookie_transport = CookieTransport(
+        cookie_name=COOKIE_NAME,
+        cookie_max_age=COOKIE_MAX_AGE,
+        cookie_secure=False,  # Set to True in production with HTTPS
+        cookie_httponly=True,
+        cookie_samesite="lax",
+    )
+    cookie_transport.delete_cookie(response)
+    return {"detail": "Successfully logged out"}
 
 def register_auth_routes(app):
     """Register authentication routes with the main FastAPI app"""
