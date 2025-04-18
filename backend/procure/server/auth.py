@@ -8,12 +8,12 @@ from sqlalchemy.orm import Session
 from sqlalchemy.exc import SQLAlchemyError
 from pydantic import BaseModel, EmailStr, Field, field_validator
 
-from fastapi_users import FastAPIUsers, schemas
-from fastapi_users.authentication import AuthenticationBackend, BearerTransport, CookieTransport, JWTStrategy
+from fastapi_users import schemas
 from fastapi_users.password import PasswordHelper
+from fastapi_users.jwt import generate_jwt, decode_jwt
 
 from procure.db.engine import SessionLocal
-from procure.db.models import Organization, User, UserDeviceToken
+from procure.db.models import User
 from procure.db import auth as db_auth
 
 import os
@@ -101,8 +101,7 @@ async def get_current_user_email(request: Request, db: Session = Depends(get_db)
         if jwt_token:
             # Validate JWT token
             try:
-                jwt_strategy = JWTStrategy(secret=SECRET, lifetime_seconds=COOKIE_MAX_AGE)
-                payload = jwt_strategy.read_token(jwt_token)
+                payload = decode_jwt(jwt_token, SECRET, ["fastapi-users:auth"])
 
                 if payload and "sub" in payload:
                     # Get user by ID from JWT token
@@ -157,6 +156,12 @@ def hash_password(password: str) -> str:
     # Use FastAPI-Users password helper
     password_helper = PasswordHelper()
     return password_helper.hash(password)
+
+def generate_jwt_token(user_id: str) -> str:
+    """Generate a JWT token for the user"""
+    # Create the JWT token
+    data = {"sub": user_id, "aud": ["fastapi-users:auth"]}
+    return generate_jwt(data, SECRET, COOKIE_MAX_AGE)
 
 def verify_password(plain_password: str, hashed_password: str) -> bool:
     """Verify a stored password against a provided password"""
@@ -349,19 +354,16 @@ async def sign_in(
             db.commit()
 
         # Set JWT cookie for browser-based authentication
-        jwt_strategy = JWTStrategy(secret=SECRET, lifetime_seconds=COOKIE_MAX_AGE)
-        token_data = {"sub": user.id, "email": user.email}
-        token = jwt_strategy.write_token(token_data)
-
-        # Set HTTP-only cookie
-        cookie_transport = CookieTransport(
-            cookie_name=COOKIE_NAME,
-            cookie_max_age=COOKIE_MAX_AGE,
-            cookie_secure=False,  # Set to True in production with HTTPS
-            cookie_httponly=True,
-            cookie_samesite="lax",
+        response.set_cookie(
+            key=COOKIE_NAME,
+            value=generate_jwt_token(user.id),
+            max_age=COOKIE_MAX_AGE,
+            path="/",
+            domain=None,
+            secure=False,  # Set to True in production with HTTPS
+            httponly=True,
+            samesite="lax",
         )
-        cookie_transport.set_cookie(response, token)
 
         return SignInResponse(
             id=user.id,
@@ -389,14 +391,16 @@ async def sign_in(
 @router.post("/logout")
 async def logout(response: Response):
     """Log out the current user by clearing the auth cookie"""
-    cookie_transport = CookieTransport(
-        cookie_name=COOKIE_NAME,
-        cookie_max_age=COOKIE_MAX_AGE,
-        cookie_secure=False,  # Set to True in production with HTTPS
-        cookie_httponly=True,
-        cookie_samesite="lax",
+    response.set_cookie(
+        key=COOKIE_NAME,
+        value="",
+        max_age=0,
+        path="/",
+        domain=None,
+        secure=False,  # Set to True in production with HTTPS
+        httponly=True,
+        samesite="lax",
     )
-    cookie_transport.delete_cookie(response)
     return {"detail": "Successfully logged out"}
 
 def register_auth_routes(app):
