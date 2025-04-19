@@ -1,5 +1,5 @@
 """
-Pydantic models for URL visits in the proCure application.
+Pydantic schemas for URL visits in the proCure application.
 """
 
 from typing import List

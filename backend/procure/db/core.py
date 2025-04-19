@@ -1,4 +1,4 @@
-from sqlalchemy import select, and_, func, join
+from sqlalchemy import select, and_, func
 from sqlalchemy.orm import Session
 from datetime import datetime, timezone
 from typing import List, Dict, Any, Optional, Tuple

@@ -8,7 +8,7 @@ from sqlalchemy.exc import SQLAlchemyError
 import logging
 
 from procure.auth.users import authenticate_user_by_token
-from procure.server.url_visits.models import UrlVisitLog, UrlVisitResponse
+from procure.server.url_visits.schemas import UrlVisitLog, UrlVisitResponse
 from procure.utils.db_utils import get_db
 from procure.db import core as db_core
 from procure.configs.app_configs import API_PREFIX
