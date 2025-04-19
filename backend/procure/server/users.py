@@ -72,9 +72,9 @@ def get_jwt_strategy() -> JWTStrategy:
 cookie_transport = CookieTransport(
     cookie_name=COOKIE_NAME,
     cookie_max_age=COOKIE_MAX_AGE,
-    cookie_secure=False,  # Set to True in production with HTTPS
+    cookie_secure=True,  # Must be True when SameSite=none
     cookie_httponly=True,
-    cookie_samesite="lax",
+    cookie_samesite="none",
 )
 
 # Bearer transport for API access

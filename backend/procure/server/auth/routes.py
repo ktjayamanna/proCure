@@ -211,11 +211,12 @@ async def sign_in(
             value=generate_jwt_token(user.id),
             max_age=COOKIE_MAX_AGE,
             path="/",
-            domain=None,
-            secure=False,  # Set to True in production with HTTPS
+            domain=None,         # host‑only (127.0.0.1)
+            secure=True,         # Must be True when SameSite=none, even for localhost
             httponly=True,
-            samesite="lax",
+            samesite="none",     # <— allow on cross‑origin fetches
         )
+
 
         return SignInResponse(
             id=user.id,
@@ -249,9 +250,9 @@ async def logout(response: Response):
         max_age=0,
         path="/",
         domain=None,
-        secure=False,  # Set to True in production with HTTPS
+        secure=True,  # Must be True when SameSite=none
         httponly=True,
-        samesite="lax",
+        samesite="none",
     )
     return {"detail": "Successfully logged out"}
 

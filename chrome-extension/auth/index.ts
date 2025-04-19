@@ -10,7 +10,7 @@ const USER_KEY = 'auth_user'
 const TOKEN_KEY = 'auth_token'
 
 // Backend API URL - should be configurable in a production environment
-const API_URL = 'http://127.0.0.1:8000/api/v1/auth'
+const API_URL = 'http://localhost:8000/api/v1/auth'
 
 // Types
 export interface User {
