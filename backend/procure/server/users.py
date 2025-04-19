@@ -1,9 +1,8 @@
 import uuid
-from typing import Optional, Union, Dict, Any
-from datetime import datetime, timedelta, timezone
+from typing import Optional
 
-from fastapi import Depends, Request, Response
-from fastapi_users import BaseUserManager, FastAPIUsers, UUIDIDMixin
+from fastapi import Depends, Request
+from fastapi_users import BaseUserManager, FastAPIUsers
 from fastapi_users.authentication import (
     AuthenticationBackend,
     BearerTransport,
