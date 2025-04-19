@@ -12,22 +12,12 @@ from fastapi_users.authentication import (
 from fastapi_users.db import SQLAlchemyUserDatabase
 
 from procure.db.models import User, get_user_db
-import os
-from dotenv import load_dotenv
-
-# Load environment variables
-load_dotenv(".vscode/.env")
-
-# Get JWT secret from environment or use a default for development
-SECRET = os.getenv("JWT_SECRET", "SECRET_KEY_FOR_JWT_PLEASE_CHANGE_IN_PRODUCTION")
-# Cookie settings
-COOKIE_NAME = "procure_auth"
-COOKIE_MAX_AGE = 3600 * 24 * 30  # 30 days
+from procure.configs.constants import AUTH_SECRET, AUTH_COOKIE_NAME, AUTH_COOKIE_MAX_AGE
 
 # User manager for handling user operations
 class UserManager(BaseUserManager[User, str]):
-    reset_password_token_secret = SECRET
-    verification_token_secret = SECRET
+    reset_password_token_secret = AUTH_SECRET
+    verification_token_secret = AUTH_SECRET
 
     async def on_after_register(self, user: User, request: Optional[Request] = None):
         print(f"User {user.id} has registered.")
@@ -66,12 +56,12 @@ def get_user_manager(user_db: SQLAlchemyUserDatabase = Depends(get_user_db)):
 
 # JWT strategy for token authentication
 def get_jwt_strategy() -> JWTStrategy:
-    return JWTStrategy(secret=SECRET, lifetime_seconds=COOKIE_MAX_AGE)
+    return JWTStrategy(secret=AUTH_SECRET, lifetime_seconds=AUTH_COOKIE_MAX_AGE)
 
 # Cookie transport for HTTP-only cookies
 cookie_transport = CookieTransport(
-    cookie_name=COOKIE_NAME,
-    cookie_max_age=COOKIE_MAX_AGE,
+    cookie_name=AUTH_COOKIE_NAME,
+    cookie_max_age=AUTH_COOKIE_MAX_AGE,
     cookie_secure=True,  # Must be True when SameSite=none
     cookie_httponly=True,
     cookie_samesite="none",

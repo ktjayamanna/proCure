@@ -1,13 +1,19 @@
 import re
 from typing import Optional
+from enum import Enum
 from pydantic import BaseModel, EmailStr, Field, field_validator
+
+# User role enum
+class UserRole(str, Enum):
+    ADMIN = "admin"
+    MEMBER = "member"
 
 # Pydantic models for request/response
 class CreateUserRequest(BaseModel):
     email: EmailStr
     password: str = Field(..., min_length=8)
     device_id: str
-    role: str = "member"  # Default to member, can be "admin" or "member"
+    role: UserRole = UserRole.MEMBER  # Default role
 
     @field_validator('password')
     @classmethod

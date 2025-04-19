@@ -1,14 +1,12 @@
 import uuid
-import string
 import secrets
 from sqlalchemy import select, and_
 from sqlalchemy.orm import Session
 from typing import Optional, Tuple
 
 from procure.db.models import Organization, User, UserDeviceToken
-
-# Base62 charset (URL-safe, no special chars)
-BASE62 = string.ascii_letters + string.digits  # A-Z a-z 0-9
+from procure.configs.constants import BASE62
+from procure.auth.schemas import UserRole
 
 def generate_org_id():
     """Generate a unique organization ID with 'org_' prefix and 32 random characters."""
@@ -69,7 +67,7 @@ def create_organization(db: Session, name: str, organization_id: Optional[str] =
 
     return new_organization
 
-def create_user(db: Session, email: str, password_hash: str, organization_id: str, role: str = "member") -> User:
+def create_user(db: Session, email: str, password_hash: str, organization_id: str, role: str = UserRole.MEMBER) -> User:
     """Create a new user."""
     # Check if organization exists
     organization = get_organization_by_id(db, organization_id)
@@ -83,7 +81,7 @@ def create_user(db: Session, email: str, password_hash: str, organization_id: st
         hashed_password=password_hash,
         is_active=True,
         is_verified=False,
-        is_superuser=role == "admin",
+        is_superuser=role == UserRole.ADMIN,
         organization_id=organization_id,
         role=role
     )

@@ -1,5 +1,4 @@
 import logging
-import uuid
 from fastapi import APIRouter, Depends, HTTPException, Response, status
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import SQLAlchemyError
@@ -11,18 +10,19 @@ from procure.auth.dependencies import get_db, get_current_user_email
 from procure.auth.schemas import (
     CreateUserRequest, CreateUserResponse,
     SignInRequest, SignInResponse,
-    UserResponse
+    UserResponse, UserRole
 )
 from procure.auth.utils import (
     hash_password, verify_password, generate_device_token,
-    generate_jwt_token, COOKIE_NAME, COOKIE_MAX_AGE
+    generate_jwt_token
 )
+from procure.configs.constants import AUTH_COOKIE_NAME, AUTH_COOKIE_MAX_AGE, AUTH_API_PREFIX
 
 # Set up logging
 logger = logging.getLogger(__name__)
 
 # Create router
-router = APIRouter(prefix="/api/v1/auth", tags=["auth"])
+router = APIRouter(prefix=AUTH_API_PREFIX, tags=["auth"])
 
 @router.post("/create-user", response_model=CreateUserResponse, status_code=status.HTTP_201_CREATED)
 async def create_user(
@@ -58,25 +58,23 @@ async def create_user(
 
         organization_id = organization.organization_id
 
-        # Check if user can be added with the requested role
-        role = user_data.role.lower()
-        if role not in ["admin", "member"]:
-            role = "member"  # Default to member if invalid role
+        # Get the role value
+        role = str(user_data.role)
 
         # Check if there are slots available for the requested role
-        if role == "admin" and organization.admins_remaining <= 0:
+        if role == UserRole.ADMIN and organization.admins_remaining <= 0:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="No admin slots remaining in this organization. Sign up failed."
             )
-        elif role == "member" and organization.members_remaining <= 0:
+        elif role == UserRole.MEMBER and organization.members_remaining <= 0:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="No member slots remaining in this organization. Sign up failed."
             )
 
         # Decrement the appropriate counter
-        if role == "admin":
+        if role == UserRole.ADMIN:
             organization.admins_remaining -= 1
         else:  # member
             organization.members_remaining -= 1
@@ -207,9 +205,9 @@ async def sign_in(
 
         # Set JWT cookie for browser-based authentication
         response.set_cookie(
-            key=COOKIE_NAME,
+            key=AUTH_COOKIE_NAME,
             value=generate_jwt_token(user.id),
-            max_age=COOKIE_MAX_AGE,
+            max_age=AUTH_COOKIE_MAX_AGE,
             path="/",
             domain=None,         # host‑only (127.0.0.1)
             secure=True,         # Must be True when SameSite=none, even for localhost
@@ -245,7 +243,7 @@ async def sign_in(
 async def logout(response: Response):
     """Log out the current user by clearing the auth cookie"""
     response.set_cookie(
-        key=COOKIE_NAME,
+        key=AUTH_COOKIE_NAME,
         value="",
         max_age=0,
         path="/",

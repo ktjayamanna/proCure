@@ -1,13 +1,12 @@
 import logging
-from typing import Optional
 from fastapi import Depends, HTTPException, Request, status
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import SQLAlchemyError
 
 from procure.db.engine import SessionLocal
-from procure.db.models import User
 from procure.db import auth as db_auth
-from procure.auth.utils import get_token_from_request, SECRET, COOKIE_NAME
+from procure.auth.utils import get_token_from_request
+from procure.configs.constants import AUTH_SECRET, AUTH_COOKIE_NAME
 from fastapi_users.jwt import decode_jwt
 
 # Set up logging
@@ -30,12 +29,12 @@ async def get_current_user_email(request: Request, db: Session = Depends(get_db)
     # If no token in header, try to get from cookie
     if not token:
         cookies = request.cookies
-        jwt_token = cookies.get(COOKIE_NAME)
+        jwt_token = cookies.get(AUTH_COOKIE_NAME)
 
         if jwt_token:
             # Validate JWT token
             try:
-                payload = decode_jwt(jwt_token, SECRET, ["fastapi-users:auth"])
+                payload = decode_jwt(jwt_token, AUTH_SECRET, ["fastapi-users:auth"])
 
                 if payload and "sub" in payload:
                     # Get user by ID from JWT token

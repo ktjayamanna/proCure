@@ -2,19 +2,9 @@ import secrets
 from typing import Optional
 from fastapi import Request
 from fastapi_users.password import PasswordHelper
-from fastapi_users.jwt import generate_jwt, decode_jwt
+from fastapi_users.jwt import generate_jwt
 
-import os
-from dotenv import load_dotenv
-
-# Load environment variables
-load_dotenv(".vscode/.env")
-
-# Get JWT secret from environment or use a default for development
-SECRET = os.getenv("JWT_SECRET", "SECRET_KEY_FOR_JWT_PLEASE_CHANGE_IN_PRODUCTION")
-# Cookie settings
-COOKIE_NAME = "procure_auth"
-COOKIE_MAX_AGE = 3600 * 24 * 30  # 30 days
+from procure.configs.constants import AUTH_SECRET, AUTH_COOKIE_MAX_AGE
 
 def get_token_from_request(request: Request) -> Optional[str]:
     """Extract the device token from the Authorization header."""
@@ -37,7 +27,7 @@ def generate_jwt_token(user_id: str) -> str:
     """Generate a JWT token for the user"""
     # Create the JWT token
     data = {"sub": user_id, "aud": ["fastapi-users:auth"]}
-    return generate_jwt(data, SECRET, COOKIE_MAX_AGE)
+    return generate_jwt(data, AUTH_SECRET, AUTH_COOKIE_MAX_AGE)
 
 def verify_password(plain_password: str, hashed_password: str) -> bool:
     """Verify a stored password against a provided password"""
