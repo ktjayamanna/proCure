@@ -14,8 +14,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "proCure - Add SaaS Purchases",
-  description: "Upload SaaS purchase data via CSV/Excel",
+  title: "proCure - Register",
+  description: "Register for proCure",
 };
 
 export default function RootLayout({
