@@ -12,7 +12,7 @@ from fastapi_users.authentication import (
 from fastapi_users.db import SQLAlchemyUserDatabase
 
 from procure.db.models import User, get_user_db
-from procure.configs.constants import AUTH_SECRET, AUTH_COOKIE_NAME, AUTH_COOKIE_MAX_AGE
+from procure.configs.app_configs import AUTH_SECRET, AUTH_COOKIE_NAME, AUTH_COOKIE_MAX_AGE, AUTH_API_PREFIX
 
 # User manager for handling user operations
 class UserManager(BaseUserManager[User, str]):
@@ -68,7 +68,7 @@ cookie_transport = CookieTransport(
 )
 
 # Bearer transport for API access
-bearer_transport = BearerTransport(tokenUrl="api/v1/auth/jwt/login")
+bearer_transport = BearerTransport(tokenUrl=f"{AUTH_API_PREFIX}/jwt/login")
 
 # Authentication backends
 auth_cookie_backend = AuthenticationBackend(

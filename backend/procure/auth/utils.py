@@ -4,7 +4,7 @@ from fastapi import Request
 from fastapi_users.password import PasswordHelper
 from fastapi_users.jwt import generate_jwt
 
-from procure.configs.constants import AUTH_SECRET, AUTH_COOKIE_MAX_AGE
+from procure.configs.app_configs import AUTH_SECRET, AUTH_COOKIE_MAX_AGE
 
 def get_token_from_request(request: Request) -> Optional[str]:
     """Extract the device token from the Authorization header."""

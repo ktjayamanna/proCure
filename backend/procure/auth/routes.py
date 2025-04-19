@@ -16,7 +16,7 @@ from procure.auth.utils import (
     hash_password, verify_password, generate_device_token,
     generate_jwt_token
 )
-from procure.configs.constants import AUTH_COOKIE_NAME, AUTH_COOKIE_MAX_AGE, AUTH_API_PREFIX
+from procure.configs.app_configs import AUTH_COOKIE_NAME, AUTH_COOKIE_MAX_AGE, AUTH_API_PREFIX
 
 # Set up logging
 logger = logging.getLogger(__name__)

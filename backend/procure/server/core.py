@@ -8,6 +8,7 @@ from procure.auth.dependencies import get_current_user_email
 from procure.server.models import UrlVisitLog, UrlVisitResponse
 from procure.db.engine import SessionLocal
 from procure.db import core as db_core
+from procure.configs.app_configs import API_PREFIX
 
 # Set up logging
 logger = logging.getLogger(__name__)
@@ -21,7 +22,7 @@ def get_db():
         db.close()
 
 # Create router
-router = APIRouter(prefix="/api/v1", tags=["core"])
+router = APIRouter(prefix=API_PREFIX, tags=["core"])
 
 @router.post("/url-visits", response_model=UrlVisitResponse)
 async def log_url_visits(
