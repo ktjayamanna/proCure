@@ -4,22 +4,14 @@ from sqlalchemy.exc import SQLAlchemyError
 # No type imports needed
 import logging
 
-from procure.auth.dependencies import get_current_user_email
+from procure.auth.users import authenticate_user_by_token
 from procure.server.models import UrlVisitLog, UrlVisitResponse
-from procure.db.engine import SessionLocal
+from procure.utils.db_utils import get_db
 from procure.db import core as db_core
 from procure.configs.app_configs import API_PREFIX
 
 # Set up logging
 logger = logging.getLogger(__name__)
-
-# Database session dependency
-def get_db():
-    db = SessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
 
 # Create router
 router = APIRouter(prefix=API_PREFIX, tags=["core"])
@@ -28,7 +20,7 @@ router = APIRouter(prefix=API_PREFIX, tags=["core"])
 async def log_url_visits(
     log_data: UrlVisitLog,
     db: Session = Depends(get_db),
-    email: str = Depends(get_current_user_email)
+    email: str = Depends(authenticate_user_by_token)
 ):
     try:
         # Convert Pydantic model to dict for processing

@@ -6,7 +6,8 @@ from typing import Optional
 
 from procure.db.models import User
 from procure.db import auth as db_auth
-from procure.auth.dependencies import get_db, get_current_user_email
+from procure.auth.users import authenticate_user_by_token
+from procure.utils.db_utils import get_db
 from procure.auth.schemas import (
     CreateUserRequest, CreateUserResponse,
     SignInRequest, SignInResponse,
@@ -256,7 +257,7 @@ async def logout(response: Response):
 
 @router.get("/me", response_model=UserResponse)
 async def get_current_user(
-    email: str = Depends(get_current_user_email),
+    email: str = Depends(authenticate_user_by_token),
     db: Session = Depends(get_db)
 ):
     """Get the current authenticated user"""

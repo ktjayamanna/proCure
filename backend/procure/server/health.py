@@ -7,14 +7,7 @@ from typing import Dict, Any
 import uuid
 
 from procure.db.models import User, PurchasedSaas
-from procure.db.engine import SessionLocal
-
-def get_db():
-    db = SessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
+from procure.utils.db_utils import get_db
 
 def register_health_routes(app):
     @app.get("/ping")
