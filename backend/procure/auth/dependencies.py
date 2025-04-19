@@ -7,7 +7,7 @@ from sqlalchemy.exc import SQLAlchemyError
 from procure.db.engine import SessionLocal
 from procure.db.models import User
 from procure.db import auth as db_auth
-from procure.server.auth.utils import get_token_from_request, SECRET, COOKIE_NAME
+from procure.auth.utils import get_token_from_request, SECRET, COOKIE_NAME
 from fastapi_users.jwt import decode_jwt
 
 # Set up logging

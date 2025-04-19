@@ -7,13 +7,13 @@ from typing import Optional
 
 from procure.db.models import User
 from procure.db import auth as db_auth
-from procure.server.auth.dependencies import get_db, get_current_user_email
-from procure.server.auth.schemas import (
+from procure.auth.dependencies import get_db, get_current_user_email
+from procure.auth.schemas import (
     CreateUserRequest, CreateUserResponse,
     SignInRequest, SignInResponse,
     UserResponse
 )
-from procure.server.auth.utils import (
+from procure.auth.utils import (
     hash_password, verify_password, generate_device_token,
     generate_jwt_token, COOKIE_NAME, COOKIE_MAX_AGE
 )
