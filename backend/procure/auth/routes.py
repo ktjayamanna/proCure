@@ -25,6 +25,10 @@ logger = logging.getLogger(__name__)
 # Create router
 router = APIRouter(prefix=AUTH_API_PREFIX, tags=["auth"])
 
+def register_auth_routes(app):
+    """Register authentication routes with the main FastAPI app"""
+    app.include_router(router)
+
 @router.post("/create-user", response_model=CreateUserResponse, status_code=status.HTTP_201_CREATED)
 async def create_user(
     user_data: CreateUserRequest,
