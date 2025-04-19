@@ -52,7 +52,7 @@ export const signUp = async (
     // Handle different error formats
     if (Array.isArray(errorData.detail)) {
       // Format validation errors
-      const errorMessages = errorData.detail.map(err => {
+      const errorMessages = errorData.detail.map((err: { type: string; msg: string; loc: string[] }) => {
         if (err.type === 'value_error') {
           return err.msg;
         }
