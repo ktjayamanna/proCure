@@ -7,13 +7,14 @@ from typing import Optional
 
 from procure.db.models import User
 from procure.db import auth as db_auth
-from procure.server.auth.dependencies import get_db
+from procure.server.auth.dependencies import get_db, get_current_user_email
 from procure.server.auth.schemas import (
-    CreateUserRequest, CreateUserResponse, 
-    SignInRequest, SignInResponse
+    CreateUserRequest, CreateUserResponse,
+    SignInRequest, SignInResponse,
+    UserResponse
 )
 from procure.server.auth.utils import (
-    hash_password, verify_password, generate_device_token, 
+    hash_password, verify_password, generate_device_token,
     generate_jwt_token, COOKIE_NAME, COOKIE_MAX_AGE
 )
 
@@ -253,3 +254,38 @@ async def logout(response: Response):
         samesite="lax",
     )
     return {"detail": "Successfully logged out"}
+
+@router.get("/me", response_model=UserResponse)
+async def get_current_user(
+    email: str = Depends(get_current_user_email),
+    db: Session = Depends(get_db)
+):
+    """Get the current authenticated user"""
+    try:
+        user = db_auth.get_user_by_email(db, email)
+        if not user:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="User not found"
+            )
+
+        return UserResponse(
+            id=user.id,
+            email=user.email,
+            organization_id=user.organization_id,
+            role=user.role
+        )
+    except SQLAlchemyError as e:
+        logger.error(f"Database error getting current user: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Database error: {str(e)}"
+        )
+    except Exception as e:
+        if isinstance(e, HTTPException):
+            raise
+        logger.error(f"Error getting current user: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Error getting current user: {str(e)}"
+        )

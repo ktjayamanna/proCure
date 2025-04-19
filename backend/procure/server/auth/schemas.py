@@ -41,3 +41,9 @@ class SignInResponse(BaseModel):
     organization_id: Optional[str]
     role: str
     device_token: str
+
+class UserResponse(BaseModel):
+    id: str
+    email: str
+    organization_id: Optional[str]
+    role: str

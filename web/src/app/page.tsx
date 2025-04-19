@@ -1,6 +1,8 @@
 import { redirect } from 'next/navigation';
 
 export default function Home() {
-  redirect('/register');
+  // We'll redirect to login page by default
+  // The login page will redirect to dashboard if user is already logged in
+  redirect('/login');
   return null;
 }

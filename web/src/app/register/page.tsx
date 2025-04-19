@@ -3,15 +3,28 @@ export const metadata = {
   description: 'Register for proCure',
 };
 
+import RegisterForm from '@/components/auth/register-form';
+import Link from 'next/link';
+
 export default function RegisterPage() {
   return (
-    <div className="container mx-auto py-10 max-w-3xl">
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold">Register</h1>
+    <div className="container mx-auto py-10 max-w-md">
+      <div className="mb-6 text-center">
+        <h1 className="text-3xl font-bold">Create an account</h1>
+        <p className="text-muted-foreground mt-2">Enter your details to create a new account</p>
       </div>
 
       <div className="mb-6">
-        <p className="text-lg">Hello World</p>
+        <RegisterForm />
+      </div>
+
+      <div className="text-center text-sm">
+        <p>
+          Already have an account?{' '}
+          <Link href="/login" className="text-primary font-medium hover:underline">
+            Sign in
+          </Link>
+        </p>
       </div>
     </div>
   );
