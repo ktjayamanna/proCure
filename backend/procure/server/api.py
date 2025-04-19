@@ -3,7 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from procure.server.health import register_health_routes
 from procure.server.core import register_core_routes
-from procure.server.auth import register_auth_routes
+from procure.server.auth.core import register_auth_routes
 
 app = FastAPI(title="proCure Backend", version="1.0.0")
 

@@ -1,4 +1,3 @@
-from typing import Optional
 from fastapi import Depends
 from fastapi_users.db import SQLAlchemyBaseUserTable, SQLAlchemyUserDatabase
 from sqlalchemy import (
@@ -11,7 +10,7 @@ from sqlalchemy import (
     Boolean,
     func
 )
-from sqlalchemy.orm import relationship, foreign
+from sqlalchemy.orm import relationship
 from sqlalchemy.ext.asyncio import AsyncSession
 from .engine import Base, SessionLocal
 
