@@ -1,11 +1,14 @@
+"""
+URL visits routes for the proCure application.
+"""
+
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import SQLAlchemyError
-# No type imports needed
 import logging
 
 from procure.auth.users import authenticate_user_by_token
-from procure.server.models import UrlVisitLog, UrlVisitResponse
+from procure.server.url_visits.models import UrlVisitLog, UrlVisitResponse
 from procure.utils.db_utils import get_db
 from procure.db import core as db_core
 from procure.configs.app_configs import API_PREFIX
@@ -14,7 +17,7 @@ from procure.configs.app_configs import API_PREFIX
 logger = logging.getLogger(__name__)
 
 # Create router
-router = APIRouter(prefix=API_PREFIX, tags=["core"])
+router = APIRouter(prefix=API_PREFIX, tags=["url_visits"])
 
 @router.post("/url-visits", response_model=UrlVisitResponse)
 async def log_url_visits(
@@ -56,6 +59,6 @@ async def log_url_visits(
             detail=f"Database error: {str(e)}"
         )
 
-def register_core_routes(app):
-    """Register core routes with the main FastAPI app"""
+def register_url_visits_routes(app):
+    """Register URL visits routes with the main FastAPI app"""
     app.include_router(router)

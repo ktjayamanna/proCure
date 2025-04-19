@@ -43,7 +43,7 @@ services:
         cd /app &&
         sleep 5 &&  # Add a small delay to ensure postgres is ready
         alembic upgrade head &&
-        uvicorn procure.server.api:app --host 0.0.0.0 --port 8000 --reload"
+        uvicorn procure.server.main:app --host 0.0.0.0 --port 8000 --reload"
 
 volumes:
   postgres_data:

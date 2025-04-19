@@ -1,7 +1,10 @@
+"""
+Pydantic models for URL visits in the proCure application.
+"""
+
 from typing import List
 from pydantic import BaseModel
 
-# Pydantic models for request/response
 class UrlVisitEntry(BaseModel):
     url: str
     timestamp: int

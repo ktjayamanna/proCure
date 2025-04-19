@@ -1,3 +1,7 @@
+"""
+Health check routes for the proCure application.
+"""
+
 from fastapi import Depends, HTTPException
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import SQLAlchemyError
