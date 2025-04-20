@@ -7,6 +7,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from procure.server.health.routes import register_health_routes
 from procure.server.url_visits.routes import register_url_visits_routes
+from procure.server.manage.routes import register_manage_routes
 from procure.auth.routes import register_auth_routes
 
 app = FastAPI(title="proCure Backend", version="1.0.0")
@@ -38,3 +39,6 @@ register_auth_routes(app)
 
 # Register URL visits routes
 register_url_visits_routes(app)
+
+# Register organization management routes
+register_manage_routes(app)

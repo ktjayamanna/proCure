@@ -4,10 +4,36 @@ import { useAuth } from "@/lib/auth/auth-context";
 import ProtectedRoute from "@/components/auth/protected-route";
 import { Button } from "@/components/ui/button";
 import { useRouter } from "next/navigation";
+import { useState, useEffect } from "react";
+import { getOrganizationName } from "@/lib/api/organization-api";
 
 export default function DashboardPage() {
   const { user, onLogout } = useAuth();
   const router = useRouter();
+  const [organization, setOrganization] = useState<{ domain_name: string; company_name?: string } | null>(null);
+  const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [error, setError] = useState<string>("");
+
+  useEffect(() => {
+    // Fetch organization name when user data is available
+    const fetchOrgName = async () => {
+      if (user?.organization_id) {
+        try {
+          setIsLoading(true);
+          setError("");
+          const orgData = await getOrganizationName(user.organization_id);
+          setOrganization(orgData);
+        } catch (err) {
+          console.error("Error fetching organization name:", err);
+          setError("Could not load organization name");
+        } finally {
+          setIsLoading(false);
+        }
+      }
+    };
+
+    fetchOrgName();
+  }, [user?.organization_id]);
 
   const handleLogout = async () => {
     await onLogout();
@@ -32,7 +58,17 @@ export default function DashboardPage() {
               <div className="mt-2 text-sm text-muted-foreground">
                 <p>Email: {user?.email}</p>
                 <p>Role: {user?.role || "Member"}</p>
-                <p>Organization ID: {user?.organization_id || "Not assigned"}</p>
+                <p>
+                  Organization: {isLoading ? (
+                    <span className="text-muted-foreground italic">Loading...</span>
+                  ) : error ? (
+                    <span className="text-destructive">{error}</span>
+                  ) : organization ? (
+                    <span>{organization.company_name || organization.domain_name}</span>
+                  ) : (
+                    <span className="text-muted-foreground">Not assigned</span>
+                  )}
+                </p>
               </div>
             </div>
           </div>

@@ -19,7 +19,8 @@ class Organization(Base):
     __tablename__ = "organizations"
 
     organization_id = Column(String(36), primary_key=True)
-    name            = Column(String(255), nullable=False)
+    domain_name     = Column(String(255), nullable=False)  # Domain name (e.g., example.com)
+    company_name    = Column(String(255), nullable=True)   # Full company name (e.g., Example Corporation)
     admins_remaining = Column(Integer, nullable=False, default=1)
     members_remaining = Column(Integer, nullable=False, default=1000)
 

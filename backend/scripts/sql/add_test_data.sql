@@ -1,11 +1,13 @@
 -- Add test organizations with new org_id format
-INSERT INTO organizations (organization_id, name, admins_remaining, members_remaining) VALUES
-('org_abcdefghijklmnopqrstuvwxyz123456', 'firebaystudios.com', 2, 999),
-('org_bcdefghijklmnopqrstuvwxyz1234567', 'example.com', 1, 500),
-('org_cdefghijklmnopqrstuvwxyz12345678', 'company.org', 1, 100),
-('org_defghijklmnopqrstuvwxyz123456789', 'acme.com', 1, 1000),
-('org_efghijklmnopqrstuvwxyz1234567890', 'startup.io', 1, 0)
+INSERT INTO organizations (organization_id, domain_name, company_name, admins_remaining, members_remaining) VALUES
+('org_abcdefghijklmnopqrstuvwxyz123456', 'firebaystudios.com', 'FireBay Studios', 2, 999),
+('org_bcdefghijklmnopqrstuvwxyz1234567', 'example.com', 'Example Corporation', 1, 500),
+('org_cdefghijklmnopqrstuvwxyz12345678', 'company.org', 'Company Organization', 1, 100),
+('org_defghijklmnopqrstuvwxyz123456789', 'acme.com', 'ACME Inc.', 1, 1000),
+('org_efghijklmnopqrstuvwxyz1234567890', 'startup.io', 'Startup.io', 1, 0)
 ON CONFLICT (organization_id) DO UPDATE SET
+  domain_name = EXCLUDED.domain_name,
+  company_name = EXCLUDED.company_name,
   admins_remaining = EXCLUDED.admins_remaining,
   members_remaining = EXCLUDED.members_remaining;
 
@@ -122,7 +124,7 @@ WHERE email = 'ceo@startup.io'
 ON CONFLICT DO NOTHING;
 
 -- Query to verify the data
-SELECT u.email, o.name as organization_name, ps.saas_name, ps.url
+SELECT u.email, o.company_name, o.domain_name, ps.saas_name, ps.url
 FROM users u
 JOIN organizations o ON u.organization_id = o.organization_id
 JOIN purchased_saas ps ON u.id = ps.owner_id

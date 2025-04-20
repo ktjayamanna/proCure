@@ -12,8 +12,10 @@ export interface AuthState {
   user: User | null;
 }
 
-// Backend API URL - should be configurable in a production environment
-const API_URL = 'http://localhost:8000/api/v1/auth';
+import { AUTH_API_URL } from '@/lib/config';
+
+// Backend API URL from config
+const API_URL = AUTH_API_URL;
 
 // Generate a random device ID for the Chrome extension compatibility
 // The web app doesn't use device tokens for authentication (it uses cookies)
