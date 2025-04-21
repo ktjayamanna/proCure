@@ -15,7 +15,12 @@ app = FastAPI(title="proCure Backend", version="1.0.0")
 # Configure CORS
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000"],  # For web app development
+    allow_origins=[
+        "http://localhost:3000",  # For web app development
+        "http://127.0.0.1:3000",  # Alternative local address
+        "http://localhost:8000",  # For backend API access
+        "http://127.0.0.1:8000"   # Alternative backend address
+    ],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

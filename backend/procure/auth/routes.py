@@ -32,6 +32,7 @@ def register_auth_routes(app):
 @router.post("/create-user", response_model=CreateUserResponse, status_code=status.HTTP_201_CREATED)
 async def create_user(
     user_data: CreateUserRequest,
+    response: Response,
     db: Session = Depends(get_db)
 ):
     """
@@ -113,6 +114,18 @@ async def create_user(
 
         # Commit the transaction
         db.commit()
+
+        # Set JWT cookie for browser-based authentication
+        response.set_cookie(
+            key=AUTH_COOKIE_NAME,
+            value=generate_jwt_token(new_user.id),
+            max_age=AUTH_COOKIE_MAX_AGE,
+            path="/",
+            domain=None,         # host‑only (localhost)
+            secure=True,         # Must be True when SameSite=none, even for localhost
+            httponly=True,
+            samesite="none",     # <— allow on cross‑origin fetches
+        )
 
         return CreateUserResponse(
             id=new_user.id,
@@ -214,7 +227,7 @@ async def sign_in(
             value=generate_jwt_token(user.id),
             max_age=AUTH_COOKIE_MAX_AGE,
             path="/",
-            domain=None,         # host‑only (127.0.0.1)
+            domain=None,         # host‑only (localhost)
             secure=True,         # Must be True when SameSite=none, even for localhost
             httponly=True,
             samesite="none",     # <— allow on cross‑origin fetches

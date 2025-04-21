@@ -12,7 +12,7 @@ const LAST_SYNC_TIME_KEY = 'last_sync_time';
 const SYNC_STATUS_KEY = 'sync_status';
 
 // Backend API URL
-const API_URL = 'http://127.0.0.1:8000/api/v1/url-visits';
+const API_URL = 'http://localhost:8000/api/v1/url-visits';
 
 // Status types
 export type SyncStatus = 'idle' | 'syncing' | 'success' | 'error';
