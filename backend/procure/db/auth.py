@@ -45,27 +45,10 @@ def get_organization_by_id(db: Session, organization_id: str) -> Optional[Organi
     stmt = select(Organization).where(Organization.organization_id == organization_id)
     return db.scalars(stmt).one_or_none()
 
-def get_organization_by_name(db: Session, name: str) -> Optional[Organization]:
-    """Get an organization by name (domain)."""
-    stmt = select(Organization).where(Organization.name == name)
+def get_organization_by_domain_name(db: Session, domain_name: str) -> Optional[Organization]:
+    """Get an organization by domain name."""
+    stmt = select(Organization).where(Organization.domain_name == domain_name)
     return db.scalars(stmt).one_or_none()
-
-def create_organization(db: Session, name: str, organization_id: Optional[str] = None, admins_remaining: int = 1, members_remaining: int = 1000) -> Organization:
-    """Create a new organization."""
-    if not organization_id:
-        organization_id = generate_org_id()
-
-    new_organization = Organization(
-        organization_id=organization_id,
-        name=name,
-        admins_remaining=admins_remaining,
-        members_remaining=members_remaining
-    )
-
-    db.add(new_organization)
-    db.flush()
-
-    return new_organization
 
 def create_user(db: Session, email: str, password_hash: str, organization_id: str, role: str = UserRole.MEMBER) -> User:
     """Create a new user."""

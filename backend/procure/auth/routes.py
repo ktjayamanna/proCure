@@ -54,7 +54,7 @@ async def create_user(
         domain = email_parts[1] if len(email_parts) > 1 else 'unknown'
 
         # Find organization by domain name
-        organization = db_auth.get_organization_by_name(db, domain)
+        organization = db_auth.get_organization_by_domain_name(db, domain_name=domain)
         if not organization:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
