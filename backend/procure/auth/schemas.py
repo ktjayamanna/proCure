@@ -33,6 +33,7 @@ class CreateUserResponse(BaseModel):
     id: str
     email: str
     organization_id: str
+    role: str
     device_token: str
 
 class SignInRequest(BaseModel):

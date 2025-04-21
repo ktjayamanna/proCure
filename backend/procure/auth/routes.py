@@ -131,6 +131,7 @@ async def create_user(
             id=new_user.id,
             email=new_user.email,
             organization_id=new_user.organization_id,
+            role=new_user.role,
             device_token=device_token
         )
 
