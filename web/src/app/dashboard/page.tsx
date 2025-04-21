@@ -15,7 +15,6 @@ export default function DashboardPage() {
   const [error, setError] = useState<string>("");
 
   useEffect(() => {
-    // Fetch organization name when user data is available
     const fetchOrgName = async () => {
       if (user?.organization_id) {
         try {
@@ -74,26 +73,13 @@ export default function DashboardPage() {
 
             {user?.role === "admin" ? (
               <div className="p-4 border rounded-md">
-                <h3 className="font-medium mb-2">
-                  {organization?.company_name || organization?.domain_name || "Organization"} {new Date().toLocaleString('default', { month: 'short' })} Active Usage of Purchased SaaS
-                </h3>
-                <div className="p-4 border border-dashed rounded-md bg-muted/50 flex flex-col items-center justify-center">
-                  <div className="grid grid-cols-1 gap-4 w-full max-w-md">
-                    {[
-                      { name: "Salesforce", users: "2 / 6" },
-                      { name: "Sentry", users: "8 / 10" },
-                      { name: "Zoom", users: "17 / 20" },
-                      { name: "Google Workspace", users: "17 / 20" }
-                    ].map((saas, index) => (
-                      <div key={index} className="bg-background rounded p-3 flex flex-col">
-                        <div className="flex justify-between items-start">
-                          <span className="font-medium">{saas.name}</span>
-                          <span className="text-sm">{saas.users} users</span>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
+                <h3 className="font-medium mb-4">Quick Actions</h3>
+                <Button 
+                  onClick={() => router.push('/usage')}
+                  className="w-full sm:w-auto"
+                >
+                  View SaaS Usage
+                </Button>
               </div>
             ) : (
               <div className="p-4 border rounded-md">
