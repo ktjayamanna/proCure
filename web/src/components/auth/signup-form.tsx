@@ -44,7 +44,7 @@ const formSchema = z.object({
   }),
 });
 
-export default function RegisterForm() {
+export default function SignUpForm() {
   const { onSignUp } = useAuth();
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);

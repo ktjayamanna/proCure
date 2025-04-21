@@ -3,10 +3,10 @@ export const metadata = {
   description: 'Sign up for proCure',
 };
 
-import RegisterForm from '@/components/auth/register-form';
+import SignUpForm from '@/components/auth/signup-form';
 import Link from 'next/link';
 
-export default function RegisterPage() {
+export default function SignUpPage() {
   return (
     <div className="container mx-auto py-10 max-w-md">
       <div className="mb-6 text-center">
@@ -15,7 +15,7 @@ export default function RegisterPage() {
       </div>
 
       <div className="mb-6">
-        <RegisterForm />
+        <SignUpForm />
       </div>
 
       <div className="text-center text-sm">
