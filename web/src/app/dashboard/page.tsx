@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { useRouter } from "next/navigation";
 import { useState, useEffect } from "react";
 import { getOrganizationName } from "@/lib/api/organization-api";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 
 export default function DashboardPage() {
   const { user, onLogout } = useAuth();
@@ -13,6 +14,20 @@ export default function DashboardPage() {
   const [organization, setOrganization] = useState<{ domain_name: string; company_name?: string } | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [error, setError] = useState<string>("");
+  const [showModal, setShowModal] = useState<boolean>(false);
+  const [selectedSaas, setSelectedSaas] = useState<string | null>(null);
+
+  const inactiveUsersMock: { [key: string]: string[] } = {
+    Salesforce: [ "Mike Johnson", "Emma Davis"],
+    Sentry: ["Alex Thompson", "Chris Baker"],
+    Zoom: ["David Lee", "Rachel Green", "Lisa Chen"],
+    "Google Workspace": ["James Wilson", "Maria Garcia", "Tom Baker"]
+  };
+
+  const handleShowInactiveUsers = (saasName: string) => {
+    setSelectedSaas(saasName);
+    setShowModal(true);
+  };
 
   useEffect(() => {
     // Fetch organization name when user data is available
@@ -74,20 +89,30 @@ export default function DashboardPage() {
 
             {user?.role === "admin" ? (
               <div className="p-4 border rounded-md">
-                <h3 className="font-medium mb-2">SaaS Usage Dashboard</h3>
+                <h3 className="font-medium mb-2">
+                  {organization?.company_name || organization?.domain_name || "Organization"} Monthly Active Usage of Purchased SaaS
+                </h3>
                 <div className="p-4 border border-dashed rounded-md bg-muted/50 flex flex-col items-center justify-center">
-                  <p className="text-muted-foreground text-center mb-2">SaaS Usage Graph Coming Soon</p>
-                  <div className="grid grid-cols-1 gap-2 w-full max-w-md">
+                  <div className="grid grid-cols-1 gap-4 w-full max-w-md">
                     {[
-                      { name: "Microsoft 365", users: 145 },
-                      { name: "Slack", users: 98 },
-                      { name: "Zoom", users: 87 },
-                      { name: "Google Workspace", users: 76 },
-                      { name: "Salesforce", users: 42 }
+                      { name: "Salesforce", users: "2 / 6" },
+                      { name: "Sentry", users: "8 / 10" },
+                      { name: "Zoom", users: "17 / 20" },
+                      { name: "Google Workspace", users: "17 / 20" }
                     ].map((saas, index) => (
-                      <div key={index} className="flex justify-between items-center p-2 bg-background rounded">
-                        <span>{saas.name}</span>
-                        <span className="font-medium">{saas.users} users</span>
+                      <div key={index} className="bg-background rounded p-3 flex flex-col h-[75px]">
+                        <div className="flex justify-between items-start">
+                          <span className="font-medium">{saas.name}</span>
+                          <span className="text-sm">{saas.users} users</span>
+                        </div>
+                        <div className="flex justify-end mt-auto -mb-2 -mr-1">
+                          <span 
+                            onClick={() => handleShowInactiveUsers(saas.name)}
+                            className="text-blue-500 hover:underline cursor-pointer text-[10px] italic"
+                          >
+                            see inactive users...
+                          </span>
+                        </div>
                       </div>
                     ))}
                   </div>
@@ -95,25 +120,52 @@ export default function DashboardPage() {
               </div>
             ) : (
               <div className="p-4 border rounded-md">
-                <h3 className="font-medium mb-2">Chrome Extension</h3>
-                <p className="text-sm text-muted-foreground mb-2">
-                  Install the proCure Chrome extension to automatically track your SaaS usage.
-                </p>
-                <a
-                  href="https://chrome.google.com/webstore/detail/procure-saas-usage-tracker/placeholder-id"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-primary font-medium hover:underline text-sm"
-                >
-                  Install Extension
-                </a>
-                <p className="text-xs text-muted-foreground mt-2">
-                  Set it and forget it! The extension will automatically track your SaaS usage.
-                </p>
+                <h3 className="text-lg font-semibold mb-4">Next Steps</h3>
+                <ol className="list-decimal list-inside space-y-4">
+                  <li className="text-base text-muted-foreground leading-relaxed">
+                    Close this tab
+                  </li>
+                  <li className="text-base text-muted-foreground leading-relaxed">
+                    <span>Download the proCure Chrome extension: </span>
+                    <a
+                      href="chrome://extensions/?id=hgpfmdimilcnlacmpkjbieaikidlabkg"
+                      className="text-primary font-medium hover:underline"
+                    >
+                      Open Extension
+                    </a>
+                  </li>
+                  <li className="text-base text-muted-foreground leading-relaxed">
+                    Sign in using the same credentials you used here (no need to sign up again)
+                  </li>
+                  <li className="text-base text-muted-foreground leading-relaxed italic">
+                    Set it and forget it!
+                  </li>
+                </ol>
               </div>
             )}
           </div>
         </div>
+
+        {/* Inactive Users Modal */}
+        <Dialog open={showModal} onOpenChange={setShowModal}>
+          <DialogContent aria-describedby="dialog-description">
+            <DialogHeader>
+              <DialogTitle>Inactive Users for {selectedSaas}</DialogTitle>
+              <DialogDescription id="dialog-description">
+                List of users who haven't used this application recently
+              </DialogDescription>
+            </DialogHeader>
+            <div className="py-4">
+              <ul className="list-disc pl-4 space-y-1">
+                {selectedSaas && inactiveUsersMock[selectedSaas]?.map((user, index) => (
+                  <li key={index} className="text-sm text-muted-foreground">
+                    {user}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </DialogContent>
+        </Dialog>
       </div>
     </ProtectedRoute>
   );
