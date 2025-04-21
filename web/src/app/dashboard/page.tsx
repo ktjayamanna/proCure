@@ -71,6 +71,47 @@ export default function DashboardPage() {
                 </p>
               </div>
             </div>
+
+            {user?.role === "admin" ? (
+              <div className="p-4 border rounded-md">
+                <h3 className="font-medium mb-2">SaaS Usage Dashboard</h3>
+                <div className="p-4 border border-dashed rounded-md bg-muted/50 flex flex-col items-center justify-center">
+                  <p className="text-muted-foreground text-center mb-2">SaaS Usage Graph Coming Soon</p>
+                  <div className="grid grid-cols-1 gap-2 w-full max-w-md">
+                    {[
+                      { name: "Microsoft 365", users: 145 },
+                      { name: "Slack", users: 98 },
+                      { name: "Zoom", users: 87 },
+                      { name: "Google Workspace", users: 76 },
+                      { name: "Salesforce", users: 42 }
+                    ].map((saas, index) => (
+                      <div key={index} className="flex justify-between items-center p-2 bg-background rounded">
+                        <span>{saas.name}</span>
+                        <span className="font-medium">{saas.users} users</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <div className="p-4 border rounded-md">
+                <h3 className="font-medium mb-2">Chrome Extension</h3>
+                <p className="text-sm text-muted-foreground mb-2">
+                  Install the proCure Chrome extension to automatically track your SaaS usage.
+                </p>
+                <a
+                  href="https://chrome.google.com/webstore/detail/procure-saas-usage-tracker/placeholder-id"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-primary font-medium hover:underline text-sm"
+                >
+                  Install Extension
+                </a>
+                <p className="text-xs text-muted-foreground mt-2">
+                  Set it and forget it! The extension will automatically track your SaaS usage.
+                </p>
+              </div>
+            )}
           </div>
         </div>
       </div>

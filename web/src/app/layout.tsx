@@ -15,8 +15,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "proCure - Register",
-  description: "Register for proCure",
+  title: "proCure - SaaS Usage Tracker",
+  description: "Track and manage your organization's SaaS usage",
 };
 
 export default function RootLayout({

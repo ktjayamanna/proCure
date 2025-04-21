@@ -1,4 +1,7 @@
-
+export const metadata = {
+  title: 'Sign In - proCure',
+  description: 'Sign in to proCure',
+};
 
 import LoginForm from '@/components/auth/login-form';
 import Link from 'next/link';

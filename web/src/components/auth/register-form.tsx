@@ -18,6 +18,7 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { useAuth } from "@/lib/auth/auth-context";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 
 // Form validation schema
 const formSchema = z.object({
@@ -47,6 +48,8 @@ export default function RegisterForm() {
   const { onSignUp } = useAuth();
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
+  const [isSuccess, setIsSuccess] = useState(false);
+  const [userRole, setUserRole] = useState<"member" | "admin">("member");
 
   // Initialize form
   const form = useForm<z.infer<typeof formSchema>>({
@@ -65,7 +68,9 @@ export default function RegisterForm() {
     try {
       await onSignUp(values.email, values.password, values.role);
       toast.success("Account created successfully!");
-      router.push("/dashboard");
+      setUserRole(values.role);
+      setIsSuccess(true);
+      // Don't redirect to dashboard
     } catch (error) {
       console.error("Registration error:", error);
       if (error instanceof Error) {
@@ -76,6 +81,87 @@ export default function RegisterForm() {
     } finally {
       setIsLoading(false);
     }
+  }
+
+  if (isSuccess) {
+    return userRole === "member" ? (
+      <Card className="border-2 border-primary/10 bg-primary/5">
+        <CardHeader>
+          <CardTitle className="text-xl text-center">You're all set!</CardTitle>
+          <CardDescription className="text-center">
+            Your account has been created successfully.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="rounded-lg bg-white p-4 shadow-sm">
+            <h3 className="font-medium mb-2">Next Steps:</h3>
+            <ol className="list-decimal pl-5 space-y-2">
+              <li>Close this tab</li>
+              <li>
+                <a
+                  href="https://chrome.google.com/webstore/detail/procure-saas-usage-tracker/placeholder-id"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-primary font-medium hover:underline"
+                >
+                  Install the proCure Chrome extension
+                </a>
+              </li>
+              <li>Set it and forget it! The extension will automatically track your SaaS usage.</li>
+            </ol>
+          </div>
+          <div className="text-center">
+            <Button
+              onClick={() => router.push("/dashboard")}
+              variant="outline"
+              className="mt-2"
+            >
+              Go to Dashboard
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+    ) : (
+      <Card className="border-2 border-primary/10 bg-primary/5">
+        <CardHeader>
+          <CardTitle className="text-xl text-center">Admin Account Created!</CardTitle>
+          <CardDescription className="text-center">
+            Your admin account has been created successfully.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="rounded-lg bg-white p-4 shadow-sm">
+            <h3 className="font-medium mb-2">SaaS Usage Dashboard</h3>
+            <div className="p-4 border border-dashed rounded-md bg-muted/50 flex flex-col items-center justify-center min-h-[200px]">
+              <p className="text-muted-foreground text-center mb-2">SaaS Usage Graph Coming Soon</p>
+              <div className="grid grid-cols-1 gap-2 w-full max-w-md">
+                {[
+                  { name: "Microsoft 365", users: 145 },
+                  { name: "Slack", users: 98 },
+                  { name: "Zoom", users: 87 },
+                  { name: "Google Workspace", users: 76 },
+                  { name: "Salesforce", users: 42 }
+                ].map((saas, index) => (
+                  <div key={index} className="flex justify-between items-center p-2 bg-background rounded">
+                    <span>{saas.name}</span>
+                    <span className="font-medium">{saas.users} users</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+          <div className="text-center">
+            <Button
+              onClick={() => router.push("/dashboard")}
+              variant="outline"
+              className="mt-2"
+            >
+              Go to Dashboard
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+    );
   }
 
   return (
@@ -141,7 +227,7 @@ export default function RegisterForm() {
           )}
         />
         <Button type="submit" className="w-full" disabled={isLoading}>
-          {isLoading ? "Creating account..." : "Create account"}
+          {isLoading ? "Signing up..." : "Sign up"}
         </Button>
       </form>
     </Form>
