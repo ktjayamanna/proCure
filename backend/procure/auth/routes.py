@@ -64,7 +64,7 @@ async def create_user(
         organization_id = organization.organization_id
 
         # Get the role value
-        role = str(user_data.role)
+        role = user_data.role
 
         # Check if there are slots available for the requested role
         if role == UserRole.ADMIN and organization.admins_remaining <= 0:

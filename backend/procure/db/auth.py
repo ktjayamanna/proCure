@@ -57,6 +57,14 @@ def create_user(db: Session, email: str, password_hash: str, organization_id: st
     if not organization:
         raise ValueError(f"Organization with ID {organization_id} not found")
 
+    # Convert role to string value
+    if role == UserRole.ADMIN or role == "admin":
+        role_value = "admin"
+        is_super = True
+    else:
+        role_value = "member"
+        is_super = False
+
     user_id = str(uuid.uuid4())
     new_user = User(
         id=user_id,
@@ -64,9 +72,9 @@ def create_user(db: Session, email: str, password_hash: str, organization_id: st
         hashed_password=password_hash,
         is_active=True,
         is_verified=False,
-        is_superuser=role == UserRole.ADMIN,
+        is_superuser=is_super,
         organization_id=organization_id,
-        role=role
+        role=role_value
     )
 
     db.add(new_user)
