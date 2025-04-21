@@ -1,7 +1,7 @@
 -- Add test organizations with new org_id format
 INSERT INTO organizations (organization_id, domain_name, company_name, admins_remaining, members_remaining) VALUES
-('org_abcdefghijklmnopqrstuvwxyz123456', 'firebaystudios.com', 'FireBay Studios', 2, 999),
-('org_bcdefghijklmnopqrstuvwxyz1234567', 'example.com', 'Example Corporation', 1, 500),
+('org_abcdefghijklmnopqrstuvwxyz123456', 'firebaystudios.com', 'FireBay Studios', 200, 999),
+('org_bcdefghijklmnopqrstuvwxyz1234567', 'example.com', 'Example Corporation', 100, 500),
 ('org_cdefghijklmnopqrstuvwxyz12345678', 'company.org', 'Company Organization', 1, 100),
 ('org_defghijklmnopqrstuvwxyz123456789', 'acme.com', 'ACME Inc.', 1, 1000),
 ('org_efghijklmnopqrstuvwxyz1234567890', 'startup.io', 'Startup.io', 1, 0)
