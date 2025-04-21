@@ -6,7 +6,6 @@ import { Button } from "@/components/ui/button";
 import { useRouter } from "next/navigation";
 import { useState, useEffect } from "react";
 import { getOrganizationName } from "@/lib/api/organization-api";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 
 export default function DashboardPage() {
   const { user, onLogout } = useAuth();
@@ -14,20 +13,6 @@ export default function DashboardPage() {
   const [organization, setOrganization] = useState<{ domain_name: string; company_name?: string } | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [error, setError] = useState<string>("");
-  const [showModal, setShowModal] = useState<boolean>(false);
-  const [selectedSaas, setSelectedSaas] = useState<string | null>(null);
-
-  const inactiveUsersMock: { [key: string]: string[] } = {
-    Salesforce: [ "Mike Johnson", "Emma Davis"],
-    Sentry: ["Alex Thompson", "Chris Baker"],
-    Zoom: ["David Lee", "Rachel Green", "Lisa Chen"],
-    "Google Workspace": ["James Wilson", "Maria Garcia", "Tom Baker"]
-  };
-
-  const handleShowInactiveUsers = (saasName: string) => {
-    setSelectedSaas(saasName);
-    setShowModal(true);
-  };
 
   useEffect(() => {
     // Fetch organization name when user data is available
@@ -95,23 +80,15 @@ export default function DashboardPage() {
                 <div className="p-4 border border-dashed rounded-md bg-muted/50 flex flex-col items-center justify-center">
                   <div className="grid grid-cols-1 gap-4 w-full max-w-md">
                     {[
-                      { name: "Salesforce", users: "4 / 6" },
+                      { name: "Salesforce", users: "2 / 6" },
                       { name: "Sentry", users: "8 / 10" },
                       { name: "Zoom", users: "17 / 20" },
                       { name: "Google Workspace", users: "17 / 20" }
                     ].map((saas, index) => (
-                      <div key={index} className="bg-background rounded p-3 flex flex-col h-[75px]">
+                      <div key={index} className="bg-background rounded p-3 flex flex-col">
                         <div className="flex justify-between items-start">
                           <span className="font-medium">{saas.name}</span>
                           <span className="text-sm">{saas.users} users</span>
-                        </div>
-                        <div className="flex justify-end mt-auto -mb-2 -mr-1">
-                          <span 
-                            onClick={() => handleShowInactiveUsers(saas.name)}
-                            className="text-blue-500 hover:underline cursor-pointer text-[10px] italic"
-                          >
-                            see inactive users...
-                          </span>
                         </div>
                       </div>
                     ))}
@@ -145,27 +122,6 @@ export default function DashboardPage() {
             )}
           </div>
         </div>
-
-        {/* Inactive Users Modal */}
-        <Dialog open={showModal} onOpenChange={setShowModal}>
-          <DialogContent aria-describedby="dialog-description">
-            <DialogHeader>
-              <DialogTitle>Inactive Users for {selectedSaas}</DialogTitle>
-              <DialogDescription id="dialog-description">
-                List of users who haven't used this application recently
-              </DialogDescription>
-            </DialogHeader>
-            <div className="py-4">
-              <ul className="list-disc pl-4 space-y-1">
-                {selectedSaas && inactiveUsersMock[selectedSaas]?.map((user, index) => (
-                  <li key={index} className="text-sm text-muted-foreground">
-                    {user}
-                  </li>
-                ))}
-              </ul>
-            </div>
-          </DialogContent>
-        </Dialog>
       </div>
     </ProtectedRoute>
   );
