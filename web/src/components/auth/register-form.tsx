@@ -38,6 +38,9 @@ const formSchema = z.object({
     .refine((password) => /[0-9]/.test(password), {
       message: "Password must contain at least one number.",
     }),
+  role: z.enum(["member", "admin"], {
+    required_error: "Please select a role.",
+  }),
 });
 
 export default function RegisterForm() {
@@ -51,6 +54,7 @@ export default function RegisterForm() {
     defaultValues: {
       email: "",
       password: "",
+      role: "member",
     },
   });
 
@@ -59,7 +63,7 @@ export default function RegisterForm() {
     setIsLoading(true);
 
     try {
-      await onSignUp(values.email, values.password);
+      await onSignUp(values.email, values.password, values.role);
       toast.success("Account created successfully!");
       router.push("/dashboard");
     } catch (error) {
@@ -112,6 +116,27 @@ export default function RegisterForm() {
                 />
               </FormControl>
               <FormMessage />
+            </FormItem>
+          )}
+        />
+        <FormField
+          control={form.control}
+          name="role"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Role</FormLabel>
+              <FormControl>
+                <select
+                  className="w-full h-9 rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-xs transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
+                  disabled={isLoading}
+                  {...field}
+                >
+                  <option value="member">Member</option>
+                  <option value="admin">Admin</option>
+                </select>
+              </FormControl>
+              <FormMessage />
+              <p className="text-xs text-muted-foreground mt-1">Select your role in the organization</p>
             </FormItem>
           )}
         />
