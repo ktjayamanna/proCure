@@ -90,12 +90,12 @@ export default function DashboardPage() {
             {user?.role === "admin" ? (
               <div className="p-4 border rounded-md">
                 <h3 className="font-medium mb-2">
-                  {organization?.company_name || organization?.domain_name || "Organization"} Monthly Active Usage of Purchased SaaS
+                  {organization?.company_name || organization?.domain_name || "Organization"} {new Date().toLocaleString('default', { month: 'short' })} Active Usage of Purchased SaaS
                 </h3>
                 <div className="p-4 border border-dashed rounded-md bg-muted/50 flex flex-col items-center justify-center">
                   <div className="grid grid-cols-1 gap-4 w-full max-w-md">
                     {[
-                      { name: "Salesforce", users: "2 / 6" },
+                      { name: "Salesforce", users: "4 / 6" },
                       { name: "Sentry", users: "8 / 10" },
                       { name: "Zoom", users: "17 / 20" },
                       { name: "Google Workspace", users: "17 / 20" }
