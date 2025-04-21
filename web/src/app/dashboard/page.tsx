@@ -74,12 +74,20 @@ export default function DashboardPage() {
             {user?.role === "admin" ? (
               <div className="p-4 border rounded-md">
                 <h3 className="font-medium mb-4">Quick Actions</h3>
-                <Button 
-                  onClick={() => router.push('/usage')}
-                  className="w-full sm:w-auto"
-                >
-                  View SaaS Usage
-                </Button>
+                <div className="flex flex-col sm:flex-row gap-3">
+                  <Button
+                    onClick={() => router.push('/usage')}
+                    className="w-full sm:w-auto"
+                  >
+                    View SaaS Usage
+                  </Button>
+                  <Button
+                    onClick={() => router.push('/add-contracts')}
+                    className="w-full sm:w-auto"
+                  >
+                    Add Contracts
+                  </Button>
+                </div>
               </div>
             ) : (
               <div className="p-4 border rounded-md">
