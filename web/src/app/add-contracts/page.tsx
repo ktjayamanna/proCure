@@ -11,7 +11,8 @@ import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import Papa from "papaparse";
 import * as XLSX from "xlsx";
-import { HelpCircle, ChevronDown, ChevronUp } from "lucide-react";
+import { HelpCircle, InfoIcon } from "lucide-react";
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 
 // Define the required and optional fields for contracts
 const REQUIRED_FIELDS = [
@@ -52,7 +53,7 @@ const PAYMENT_TYPES = [
 ];
 
 export default function AddContractsPage() {
-  const { user } = useAuth();
+  const { } = useAuth(); // Auth is handled by ProtectedRoute
   const router = useRouter();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -61,7 +62,7 @@ export default function AddContractsPage() {
   const [mappings, setMappings] = useState<Record<string, string>>({});
   const [isProcessing, setIsProcessing] = useState(false);
   const [fileData, setFileData] = useState<any[]>([]);
-  const [showFieldInfo, setShowFieldInfo] = useState(false);
+  // Field info is now shown in a Sheet modal instead of a collapsible section
 
   // Handle file selection
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -261,15 +262,68 @@ export default function AddContractsPage() {
               <div className="space-y-4">
                 <div className="flex justify-between items-center">
                   <h3 className="text-lg font-medium">Map Columns</h3>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setShowFieldInfo(true)}
-                    className="flex items-center gap-1"
-                  >
-                    <HelpCircle size={16} />
-                    Need Help?
-                  </Button>
+                  <Sheet>
+                    <SheetTrigger asChild>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="flex items-center gap-1"
+                      >
+                        <HelpCircle size={16} />
+                        Need Help?
+                      </Button>
+                    </SheetTrigger>
+                    <SheetContent className="overflow-y-auto">
+                      <SheetHeader>
+                        <SheetTitle>Field Information</SheetTitle>
+                      </SheetHeader>
+                      <div className="space-y-4 mt-6">
+                        <div>
+                          <h3 className="font-medium mb-2">Required Fields</h3>
+                          <ul className="list-disc pl-5 space-y-2">
+                            <li><span className="font-medium">Vendor Name:</span> Name of the vendor/company</li>
+                            <li><span className="font-medium">Annual Spend:</span> Annual cost of the contract</li>
+                            <li>
+                              <span className="font-medium">Contract Type:</span> Type of contract
+                              <ul className="list-disc pl-5 mt-1">
+                                {CONTRACT_TYPES.map((type) => (
+                                  <li key={type} className="text-sm text-muted-foreground">{type}</li>
+                                ))}
+                              </ul>
+                            </li>
+                            <li>
+                              <span className="font-medium">Contract Status:</span> Current status of the contract
+                              <ul className="list-disc pl-5 mt-1">
+                                {CONTRACT_STATUSES.map((status) => (
+                                  <li key={status} className="text-sm text-muted-foreground">{status}</li>
+                                ))}
+                              </ul>
+                            </li>
+                            <li>
+                              <span className="font-medium">Payment Type:</span> Method of payment
+                              <ul className="list-disc pl-5 mt-1">
+                                {PAYMENT_TYPES.map((type) => (
+                                  <li key={type} className="text-sm text-muted-foreground">{type}</li>
+                                ))}
+                              </ul>
+                            </li>
+                            <li><span className="font-medium">Product URL:</span> URL of the product/service</li>
+                            <li><span className="font-medium">Number of Seats:</span> Number of licenses/seats</li>
+                          </ul>
+                        </div>
+
+                        <div>
+                          <h3 className="font-medium mb-2">Optional Fields</h3>
+                          <ul className="list-disc pl-5 space-y-2">
+                            <li><span className="font-medium">Owner:</span> Person responsible for the contract</li>
+                            <li><span className="font-medium">Expire At:</span> Contract expiration date</li>
+                            <li><span className="font-medium">Created At:</span> Contract creation date</li>
+                            <li><span className="font-medium">Notes:</span> Additional information about the contract</li>
+                          </ul>
+                        </div>
+                      </div>
+                    </SheetContent>
+                  </Sheet>
                 </div>
                 <p className="text-sm text-muted-foreground mb-4">
                   Match the columns from your file to the required fields
@@ -354,89 +408,74 @@ export default function AddContractsPage() {
                 <p className="text-muted-foreground mb-2">
                   Upload a CSV or Excel file to get started
                 </p>
-                <Button
-                  variant="link"
-                  size="sm"
-                  onClick={() => setShowFieldInfo(true)}
-                  className="text-primary flex items-center gap-1 mx-auto"
-                >
-                  <HelpCircle size={16} />
-                  View required fields and format information
-                </Button>
+                <Sheet>
+                  <SheetTrigger asChild>
+                    <Button
+                      variant="link"
+                      size="sm"
+                      className="text-primary flex items-center gap-1 mx-auto"
+                    >
+                      <InfoIcon size={16} />
+                      View required fields and format information
+                    </Button>
+                  </SheetTrigger>
+                  <SheetContent className="overflow-y-auto">
+                    <SheetHeader>
+                      <SheetTitle>Field Information</SheetTitle>
+                    </SheetHeader>
+                    <div className="space-y-4 mt-6">
+                      <div>
+                        <h3 className="font-medium mb-2">Required Fields</h3>
+                        <ul className="list-disc pl-5 space-y-2">
+                          <li><span className="font-medium">Vendor Name:</span> Name of the vendor/company</li>
+                          <li><span className="font-medium">Annual Spend:</span> Annual cost of the contract</li>
+                          <li>
+                            <span className="font-medium">Contract Type:</span> Type of contract
+                            <ul className="list-disc pl-5 mt-1">
+                              {CONTRACT_TYPES.map((type) => (
+                                <li key={type} className="text-sm text-muted-foreground">{type}</li>
+                              ))}
+                            </ul>
+                          </li>
+                          <li>
+                            <span className="font-medium">Contract Status:</span> Current status of the contract
+                            <ul className="list-disc pl-5 mt-1">
+                              {CONTRACT_STATUSES.map((status) => (
+                                <li key={status} className="text-sm text-muted-foreground">{status}</li>
+                              ))}
+                            </ul>
+                          </li>
+                          <li>
+                            <span className="font-medium">Payment Type:</span> Method of payment
+                            <ul className="list-disc pl-5 mt-1">
+                              {PAYMENT_TYPES.map((type) => (
+                                <li key={type} className="text-sm text-muted-foreground">{type}</li>
+                              ))}
+                            </ul>
+                          </li>
+                          <li><span className="font-medium">Product URL:</span> URL of the product/service</li>
+                          <li><span className="font-medium">Number of Seats:</span> Number of licenses/seats</li>
+                        </ul>
+                      </div>
+
+                      <div>
+                        <h3 className="font-medium mb-2">Optional Fields</h3>
+                        <ul className="list-disc pl-5 space-y-2">
+                          <li><span className="font-medium">Owner:</span> Person responsible for the contract</li>
+                          <li><span className="font-medium">Expire At:</span> Contract expiration date</li>
+                          <li><span className="font-medium">Created At:</span> Contract creation date</li>
+                          <li><span className="font-medium">Notes:</span> Additional information about the contract</li>
+                        </ul>
+                      </div>
+                    </div>
+                  </SheetContent>
+                </Sheet>
               </div>
             )}
           </CardContent>
         </Card>
 
-        <Card className="mt-6">
-          <CardHeader className="cursor-pointer" onClick={() => setShowFieldInfo(prev => !prev)}>
-            <div className="flex justify-between items-center">
-              <CardTitle>Field Information</CardTitle>
-              <Button variant="ghost" size="sm" className="flex items-center gap-1">
-                {showFieldInfo ? (
-                  <>
-                    <ChevronUp size={16} />
-                    Hide Details
-                  </>
-                ) : (
-                  <>
-                    <ChevronDown size={16} />
-                    Show Details
-                  </>
-                )}
-              </Button>
-            </div>
-          </CardHeader>
-          {showFieldInfo && (
-            <CardContent>
-              <div className="space-y-4">
-                <div>
-                  <h3 className="font-medium mb-2">Required Fields</h3>
-                  <ul className="list-disc pl-5 space-y-2">
-                    <li><span className="font-medium">Vendor Name:</span> Name of the vendor/company</li>
-                    <li><span className="font-medium">Annual Spend:</span> Annual cost of the contract</li>
-                    <li>
-                      <span className="font-medium">Contract Type:</span> Type of contract
-                      <ul className="list-disc pl-5 mt-1">
-                        {CONTRACT_TYPES.map((type) => (
-                          <li key={type} className="text-sm text-muted-foreground">{type}</li>
-                        ))}
-                      </ul>
-                    </li>
-                    <li>
-                      <span className="font-medium">Contract Status:</span> Current status of the contract
-                      <ul className="list-disc pl-5 mt-1">
-                        {CONTRACT_STATUSES.map((status) => (
-                          <li key={status} className="text-sm text-muted-foreground">{status}</li>
-                        ))}
-                      </ul>
-                    </li>
-                    <li>
-                      <span className="font-medium">Payment Type:</span> Method of payment
-                      <ul className="list-disc pl-5 mt-1">
-                        {PAYMENT_TYPES.map((type) => (
-                          <li key={type} className="text-sm text-muted-foreground">{type}</li>
-                        ))}
-                      </ul>
-                    </li>
-                    <li><span className="font-medium">Product URL:</span> URL of the product/service</li>
-                    <li><span className="font-medium">Number of Seats:</span> Number of licenses/seats</li>
-                  </ul>
-                </div>
 
-                <div>
-                  <h3 className="font-medium mb-2">Optional Fields</h3>
-                  <ul className="list-disc pl-5 space-y-2">
-                    <li><span className="font-medium">Owner:</span> Person responsible for the contract</li>
-                    <li><span className="font-medium">Expire At:</span> Contract expiration date</li>
-                    <li><span className="font-medium">Created At:</span> Contract creation date</li>
-                    <li><span className="font-medium">Notes:</span> Additional information about the contract</li>
-                  </ul>
-                </div>
-              </div>
-            </CardContent>
-          )}
-        </Card>
       </div>
     </ProtectedRoute>
   );
