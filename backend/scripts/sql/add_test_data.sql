@@ -21,8 +21,8 @@ INSERT INTO users (id, email, hashed_password, is_active, is_superuser, is_verif
 ('e6000000-0000-0000-0000-000000000006', 'ceo@startup.io', '$2b$12$EixZaYVK1fsbw1ZfbX3OXePaWxn96p36WQoeG6Lruj3vjPGga31lW', true, true, true, NOW(), 'org_efghijklmnopqrstuvwxyz1234567890', 'admin')
 ON CONFLICT (email) DO NOTHING;
 
--- Add purchased SaaS entries for test employees
-INSERT INTO purchased_saas (saas_name, url, owner_id, created_at, organization_id)
+-- Add vendor entries for test employees
+INSERT INTO vendor (vendor_name, url, owner_id, created_at, organization_id)
 SELECT
     'Google Workspace',
     'https://mail.google.com',
@@ -33,7 +33,7 @@ FROM users
 WHERE email = 'gcahill@firebaystudios.com'
 ON CONFLICT DO NOTHING;
 
-INSERT INTO purchased_saas (saas_name, url, owner_id, created_at, organization_id)
+INSERT INTO vendor (vendor_name, url, owner_id, created_at, organization_id)
 SELECT
     'ChatGPT',
     'https://chatgpt.com',
@@ -44,7 +44,7 @@ FROM users
 WHERE email = 'gcahill@firebaystudios.com'
 ON CONFLICT DO NOTHING;
 
-INSERT INTO purchased_saas (saas_name, url, owner_id, created_at, organization_id)
+INSERT INTO vendor (vendor_name, url, owner_id, created_at, organization_id)
 SELECT
     'Slack',
     'https://app.slack.com',
@@ -55,7 +55,7 @@ FROM users
 WHERE email = 'test2@example.com'
 ON CONFLICT DO NOTHING;
 
-INSERT INTO purchased_saas (saas_name, url, owner_id, created_at, organization_id)
+INSERT INTO vendor (vendor_name, url, owner_id, created_at, organization_id)
 SELECT
     'GitHub',
     'https://github.com',
@@ -66,7 +66,7 @@ FROM users
 WHERE email = 'test3@example.com'
 ON CONFLICT DO NOTHING;
 
-INSERT INTO purchased_saas (saas_name, url, owner_id, created_at, organization_id)
+INSERT INTO vendor (vendor_name, url, owner_id, created_at, organization_id)
 SELECT
     'Trello',
     'https://trello.com',
@@ -77,7 +77,7 @@ FROM users
 WHERE email = 'test3@example.com'
 ON CONFLICT DO NOTHING;
 
-INSERT INTO purchased_saas (saas_name, url, owner_id, created_at, organization_id)
+INSERT INTO vendor (vendor_name, url, owner_id, created_at, organization_id)
 SELECT
     'Zoom',
     'https://zoom.us',
@@ -88,8 +88,8 @@ FROM users
 WHERE email = 'test3@example.com'
 ON CONFLICT DO NOTHING;
 
--- Add purchased SaaS entries for acme.com employees
-INSERT INTO purchased_saas (saas_name, url, owner_id, created_at, organization_id)
+-- Add vendor entries for acme.com employees
+INSERT INTO vendor (vendor_name, url, owner_id, created_at, organization_id)
 SELECT
     'Salesforce',
     'https://salesforce.com',
@@ -100,7 +100,7 @@ FROM users
 WHERE email = 'admin@acme.com'
 ON CONFLICT DO NOTHING;
 
-INSERT INTO purchased_saas (saas_name, url, owner_id, created_at, organization_id)
+INSERT INTO vendor (vendor_name, url, owner_id, created_at, organization_id)
 SELECT
     'Jira',
     'https://jira.atlassian.com',
@@ -111,8 +111,8 @@ FROM users
 WHERE email = 'member@acme.com'
 ON CONFLICT DO NOTHING;
 
--- Add purchased SaaS entry for startup.io employee
-INSERT INTO purchased_saas (saas_name, url, owner_id, created_at, organization_id)
+-- Add vendor entry for startup.io employee
+INSERT INTO vendor (vendor_name, url, owner_id, created_at, organization_id)
 SELECT
     'Notion',
     'https://notion.so',
@@ -124,8 +124,8 @@ WHERE email = 'ceo@startup.io'
 ON CONFLICT DO NOTHING;
 
 -- Query to verify the data
-SELECT u.email, o.company_name, o.domain_name, ps.saas_name, ps.url
+SELECT u.email, o.company_name, o.domain_name, v.vendor_name, v.url
 FROM users u
 JOIN organizations o ON u.organization_id = o.organization_id
-JOIN purchased_saas ps ON u.id = ps.owner_id
-ORDER BY u.email, ps.saas_name;
+JOIN vendor v ON u.id = v.owner_id
+ORDER BY u.email, v.vendor_name;

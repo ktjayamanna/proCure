@@ -1,0 +1,7 @@
+vendor_name,url,owner_email,annual_spend,contract_type,contract_status,payment_type,num_seats,notes
+Google Workspace,https://mail.google.com,john.doe@example.com,12000,Annual,Active,Credit Card,50,Enterprise plan
+Microsoft 365,https://outlook.office.com,jane.smith@example.com,9600,Annual,Active,ACH,40,Business Premium
+Slack,https://app.slack.com,team.lead@example.com,4800,Annual,Active,Credit Card,20,Pro plan
+GitHub,https://github.com,developer@example.com,2400,Annual,Active,Credit Card,10,Team plan
+Trello,https://trello.com,project.manager@example.com,1200,Annual,Active,Credit Card,5,Business Class
+Zoom,https://zoom.us,meeting.host@example.com,3600,Annual,Active,Credit Card,15,Business plan

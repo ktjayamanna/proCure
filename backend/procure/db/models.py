@@ -8,6 +8,7 @@ from sqlalchemy import (
     ForeignKey,
     UniqueConstraint,
     Boolean,
+    Float,
     func
 )
 from sqlalchemy.orm import relationship
@@ -29,8 +30,8 @@ class Organization(Base):
         back_populates="organization",
         cascade="all, delete"
     )
-    purchased_saases = relationship(
-        "PurchasedSaas",
+    vendors = relationship(
+        "Vendor",
         back_populates="organization",
         cascade="all, delete-orphan"
     )
@@ -62,8 +63,8 @@ class User(SQLAlchemyBaseUserTable[str], Base):
         back_populates="user",
         cascade="all, delete"
     )
-    purchased_saases = relationship(
-        "PurchasedSaas",
+    vendors = relationship(
+        "Vendor",
         back_populates="owner",
         cascade="all, delete-orphan"
     )
@@ -74,29 +75,35 @@ class User(SQLAlchemyBaseUserTable[str], Base):
     )
 
 
-# Core Entity: Purchased SaaS
-class PurchasedSaas(Base):
-    __tablename__ = "purchased_saas"
+# Core Entity: Vendor
+class Vendor(Base):
+    __tablename__ = "vendor"
     __table_args__ = (
         UniqueConstraint("organization_id", "url", name="uq_org_url"),
     )
 
     contract_id     = Column(Integer, primary_key=True)
-    saas_name       = Column(String(255), nullable=False)
+    vendor_name     = Column(String(255), nullable=False)
     url             = Column(String(2083), nullable=False)
     created_at      = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
     expire_at       = Column(DateTime(timezone=True), nullable=True)
-    owner_id        = Column(String(36), ForeignKey("users.id"), nullable=False)
+    owner_id        = Column(String(36), ForeignKey("users.id"), nullable=True)
     organization_id = Column(String(36), ForeignKey("organizations.organization_id"), nullable=True)
+    annual_spend    = Column(Float, nullable=True)
+    contract_type   = Column(String(255), nullable=True)
+    contract_status = Column(String(255), nullable=True)
+    payment_type    = Column(String(255), nullable=True)
+    num_seats       = Column(Integer, default=1)
+    notes           = Column(String(1000), nullable=True)
 
     owner = relationship(
         "User",
-        back_populates="purchased_saases",
+        back_populates="vendors",
         foreign_keys=[owner_id]
     )
     organization = relationship(
         "Organization",
-        back_populates="purchased_saases"
+        back_populates="vendors"
     )
 
 
@@ -106,12 +113,12 @@ class UserActivity(Base):
 
     activity_id       = Column(Integer, primary_key=True)
     user_id           = Column(String(36), ForeignKey("users.id"), nullable=False)
-    purchased_saas_id = Column(Integer, ForeignKey("purchased_saas.contract_id"), nullable=False)
+    contract_id = Column(Integer, ForeignKey("vendor.contract_id"), nullable=False)
     browser           = Column(String(100), nullable=False)
     date              = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
 
     user           = relationship("User", back_populates="activities")
-    purchased_saas = relationship("PurchasedSaas")
+    vendor = relationship("Vendor")
 
 
 # User Device Token

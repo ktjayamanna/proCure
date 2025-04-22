@@ -3,7 +3,7 @@ from sqlalchemy.orm import Session
 from datetime import datetime, timezone
 from typing import List, Dict, Any, Optional, Tuple
 
-from procure.db.models import PurchasedSaas, Organization, User, UserActivity
+from procure.db.models import Vendor, Organization, User, UserActivity
 
 # Database operations for core functionality
 
@@ -17,9 +17,9 @@ def get_organization_by_id(db: Session, organization_id: str) -> Optional[Organi
     stmt = select(Organization).where(Organization.organization_id == organization_id)
     return db.scalars(stmt).one_or_none()
 
-def get_purchased_saas_by_url(db: Session, url: str) -> Optional[PurchasedSaas]:
-    """Get a purchased SaaS by URL."""
-    stmt = select(PurchasedSaas).where(PurchasedSaas.url == url)
+def get_vendor_by_url(db: Session, url: str) -> Optional[Vendor]:
+    """Get a vendor by URL."""
+    stmt = select(Vendor).where(Vendor.url == url)
     return db.scalars(stmt).one_or_none()
 
 def process_url_visits(
@@ -31,7 +31,7 @@ def process_url_visits(
 
     This function performs most operations at the database level for efficiency:
     1. Finds the user by email
-    2. Identifies which URLs in the entries match purchased SaaS URLs
+    2. Identifies which URLs in the entries match vendor URLs
     3. Checks which matched URLs don't already have activities for today
     4. Creates new activities for those URLs
     """
@@ -57,22 +57,22 @@ def process_url_visits(
     # Get today's date for activity filtering
     today = datetime.now(timezone.utc).date()
 
-    # Find matches between entry URLs and purchased SaaS URLs directly in the database
-    # This is done by checking if any purchased SaaS URL is contained within the entry URL
+    # Find matches between entry URLs and vendor URLs directly in the database
+    # This is done by checking if any vendor URL is contained within the entry URL
     matched_entries: List[Tuple[int, str, int]] = []  # (contract_id, browser, timestamp)
 
-    # Get all purchased SaaS URLs and their contract_ids
-    purchased_saas_stmt = select(PurchasedSaas.contract_id, PurchasedSaas.url).where(
-        PurchasedSaas.organization_id == user.organization_id
+    # Get all vendor URLs and their contract_ids
+    vendor_stmt = select(Vendor.contract_id, Vendor.url).where(
+        Vendor.organization_id == user.organization_id
     )
-    purchased_saas_data = [(row[0], row[1]) for row in db.execute(purchased_saas_stmt)]
+    vendor_data = [(row[0], row[1]) for row in db.execute(vendor_stmt)]
 
-    # Match entry URLs with purchased SaaS URLs
+    # Match entry URLs with vendor URLs
     # This part still needs Python processing as SQL LIKE/CONTAINS would need
     # a different approach for substring matching in this direction
     for entry_url, browser, timestamp in entry_urls:
-        for contract_id, purchased_url in purchased_saas_data:
-            if purchased_url in entry_url:  # Check if purchased URL is in entry URL
+        for contract_id, vendor_url in vendor_data:
+            if vendor_url in entry_url:  # Check if vendor URL is in entry URL
                 matched_entries.append((contract_id, browser, timestamp))
                 break  # Found a match, move to next entry
 
@@ -87,10 +87,10 @@ def process_url_visits(
     # Get contract_ids that already have activities for today
     contract_ids_to_check = [contract_id for contract_id, _, _ in matched_entries]
     existing_activities_stmt = (
-        select(UserActivity.purchased_saas_id)
+        select(UserActivity.contract_id)
         .where(and_(
             UserActivity.user_id == user.id,
-            UserActivity.purchased_saas_id.in_(contract_ids_to_check),
+            UserActivity.contract_id.in_(contract_ids_to_check),
             func.date(UserActivity.date) == today
         ))
     )
@@ -100,7 +100,7 @@ def process_url_visits(
     new_activities = [
         UserActivity(
             user_id=user.id,
-            purchased_saas_id=contract_id,
+            contract_id=contract_id,
             browser=browser,
             date=datetime.fromtimestamp(timestamp / 1000, tz=timezone.utc)
         )

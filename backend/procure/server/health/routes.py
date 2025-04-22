@@ -10,7 +10,7 @@ from datetime import datetime, timezone
 from typing import Dict, Any
 import uuid
 
-from procure.db.models import User, PurchasedSaas
+from procure.db.models import User, Vendor
 from procure.utils.db_utils import get_db
 
 def register_health_routes(app):
@@ -42,23 +42,23 @@ def register_health_routes(app):
             )
             db.add(test_user)
             db.flush()
-            test_saas = PurchasedSaas(
-                saas_name="Health Check Test",
+            test_vendor = Vendor(
+                vendor_name="Health Check Test",
                 url=test_url,
                 owner_id=test_user.id
             )
-            db.add(test_saas)
+            db.add(test_vendor)
 
             # Read test using modern select
             user_stmt = select(User).where(User.email == test_email)
             db.scalars(user_stmt).one_or_none()
 
-            saas_stmt = select(PurchasedSaas).where(PurchasedSaas.url == test_url)
-            db.scalars(saas_stmt).one_or_none()
+            vendor_stmt = select(Vendor).where(Vendor.url == test_url)
+            db.scalars(vendor_stmt).one_or_none()
 
             # Cleanup using modern delete statements
-            saas_delete_stmt = delete(PurchasedSaas).where(PurchasedSaas.url == test_url)
-            db.execute(saas_delete_stmt)
+            vendor_delete_stmt = delete(Vendor).where(Vendor.url == test_url)
+            db.execute(vendor_delete_stmt)
 
             user_delete_stmt = delete(User).where(User.email == test_email)
             db.execute(user_delete_stmt)
