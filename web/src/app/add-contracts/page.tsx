@@ -84,7 +84,7 @@ export default function AddContractsPage() {
         skipEmptyLines: true,
         complete: (results) => {
           if (results.data.length > 0) {
-            const headers = Object.keys(results.data[0]);
+            const headers = Object.keys(results.data[0] as object);
             setHeaders(headers);
             setFileData(results.data);
           } else {
