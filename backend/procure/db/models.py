@@ -79,12 +79,12 @@ class User(SQLAlchemyBaseUserTable[str], Base):
 class Vendor(Base):
     __tablename__ = "vendor"
     __table_args__ = (
-        UniqueConstraint("organization_id", "url", name="uq_org_url"),
+        UniqueConstraint("organization_id", "product_url", name="uq_org_product_url"),
     )
 
     contract_id     = Column(Integer, primary_key=True)
     vendor_name     = Column(String(255), nullable=False)
-    url             = Column(String(2083), nullable=False)
+    product_url      = Column(String(2083), nullable=False)
     created_at      = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
     expire_at       = Column(DateTime(timezone=True), nullable=True)
     owner_id        = Column(String(36), ForeignKey("users.id"), nullable=True)

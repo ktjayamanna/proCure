@@ -19,7 +19,7 @@ def get_organization_by_id(db: Session, organization_id: str) -> Optional[Organi
 
 def get_vendor_by_url(db: Session, url: str) -> Optional[Vendor]:
     """Get a vendor by URL."""
-    stmt = select(Vendor).where(Vendor.url == url)
+    stmt = select(Vendor).where(Vendor.product_url == url)
     return db.scalars(stmt).one_or_none()
 
 def process_url_visits(
@@ -62,7 +62,7 @@ def process_url_visits(
     matched_entries: List[Tuple[int, str, int]] = []  # (contract_id, browser, timestamp)
 
     # Get all vendor URLs and their contract_ids
-    vendor_stmt = select(Vendor.contract_id, Vendor.url).where(
+    vendor_stmt = select(Vendor.contract_id, Vendor.product_url).where(
         Vendor.organization_id == user.organization_id
     )
     vendor_data = [(row[0], row[1]) for row in db.execute(vendor_stmt)]

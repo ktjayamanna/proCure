@@ -1,8 +1,8 @@
 """initial schema
 
-Revision ID: 836afa13ca47
+Revision ID: 1f486d082f70
 Revises: 
-Create Date: 2025-04-21 22:20:47.343897
+Create Date: 2025-04-22 12:44:45.329419
 
 """
 from typing import Sequence, Union
@@ -12,7 +12,7 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision: str = '836afa13ca47'
+revision: str = '1f486d082f70'
 down_revision: Union[str, None] = None
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
@@ -56,7 +56,7 @@ def upgrade() -> None:
     op.create_table('vendor',
     sa.Column('contract_id', sa.Integer(), nullable=False),
     sa.Column('vendor_name', sa.String(length=255), nullable=False),
-    sa.Column('url', sa.String(length=2083), nullable=False),
+    sa.Column('product_url', sa.String(length=2083), nullable=False),
     sa.Column('created_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
     sa.Column('expire_at', sa.DateTime(timezone=True), nullable=True),
     sa.Column('owner_id', sa.String(length=36), nullable=True),
@@ -70,7 +70,7 @@ def upgrade() -> None:
     sa.ForeignKeyConstraint(['organization_id'], ['organizations.organization_id'], ),
     sa.ForeignKeyConstraint(['owner_id'], ['users.id'], ),
     sa.PrimaryKeyConstraint('contract_id'),
-    sa.UniqueConstraint('organization_id', 'url', name='uq_org_url')
+    sa.UniqueConstraint('organization_id', 'product_url', name='uq_org_product_url')
     )
     op.create_table('user_activities',
     sa.Column('activity_id', sa.Integer(), nullable=False),

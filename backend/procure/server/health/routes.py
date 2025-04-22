@@ -44,7 +44,7 @@ def register_health_routes(app):
             db.flush()
             test_vendor = Vendor(
                 vendor_name="Health Check Test",
-                url=test_url,
+                product_url=test_url,
                 owner_id=test_user.id
             )
             db.add(test_vendor)
@@ -53,11 +53,11 @@ def register_health_routes(app):
             user_stmt = select(User).where(User.email == test_email)
             db.scalars(user_stmt).one_or_none()
 
-            vendor_stmt = select(Vendor).where(Vendor.url == test_url)
+            vendor_stmt = select(Vendor).where(Vendor.product_url == test_url)
             db.scalars(vendor_stmt).one_or_none()
 
             # Cleanup using modern delete statements
-            vendor_delete_stmt = delete(Vendor).where(Vendor.url == test_url)
+            vendor_delete_stmt = delete(Vendor).where(Vendor.product_url == test_url)
             db.execute(vendor_delete_stmt)
 
             user_delete_stmt = delete(User).where(User.email == test_email)
