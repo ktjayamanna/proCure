@@ -13,6 +13,7 @@ import Papa from "papaparse";
 import * as XLSX from "xlsx";
 import { HelpCircle, InfoIcon } from "lucide-react";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
+import { addVendorContract, VendorContract } from "@/lib/api/vendor-api";
 
 // Define the required and optional fields for contracts
 const REQUIRED_FIELDS = [
@@ -53,7 +54,7 @@ const PAYMENT_TYPES = [
 ];
 
 export default function AddContractsPage() {
-  const { } = useAuth(); // Auth is handled by ProtectedRoute
+  const { user } = useAuth(); // Auth is handled by ProtectedRoute
   const router = useRouter();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -154,7 +155,7 @@ export default function AddContractsPage() {
   };
 
   // Process the mapped data
-  const processData = useCallback(() => {
+  const processData = useCallback(async () => {
     // Check if all required fields are mapped
     const missingRequiredFields = REQUIRED_FIELDS.filter(
       (field) => !mappings[field.id]
@@ -166,6 +167,11 @@ export default function AddContractsPage() {
           .map((f) => f.label)
           .join(", ")}`
       );
+      return;
+    }
+
+    if (!user?.organization_id) {
+      toast.error("Organization ID not found. Please log in again.");
       return;
     }
 
@@ -192,21 +198,68 @@ export default function AddContractsPage() {
       return processedRow;
     });
 
-    // Log the processed data to console
-    console.log("Processed Contracts:", processedData);
+    // Set processing state
+    setIsProcessing(true);
 
-    // Show success message
-    toast.success(`Successfully processed ${processedData.length} contracts`);
+    // Track success and failures
+    let successCount = 0;
+    let failureCount = 0;
 
-    // Reset the form
-    setFile(null);
-    setHeaders([]);
-    setMappings({});
-    setFileData([]);
-    if (fileInputRef.current) {
-      fileInputRef.current.value = "";
+    try {
+      // Process each contract
+      for (const contract of processedData) {
+        try {
+          // Convert the processed data to the format expected by the API
+          const contractData: VendorContract = {
+            vendor_name: contract.vendor_name,
+            product_url: contract.product_url,
+            organization_id: user.organization_id,
+            num_seats: parseInt(contract.number_of_seats) || 1,
+            annual_spend: contract.annual_spend ? parseFloat(contract.annual_spend) : undefined,
+            contract_type: contract.contract_type,
+            contract_status: contract.contract_status,
+            payment_type: contract.payment_type,
+            notes: contract.notes
+          };
+
+          // Call the API to add the contract
+          const result = await addVendorContract(contractData);
+
+          if (result.success) {
+            successCount++;
+          } else {
+            failureCount++;
+          }
+        } catch (error) {
+          console.error("Error adding contract:", error);
+          failureCount++;
+        }
+      }
+
+      // Show success message
+      if (successCount > 0 && failureCount === 0) {
+        toast.success(`Successfully added ${successCount} contracts`);
+      } else if (successCount > 0 && failureCount > 0) {
+        toast.warning(`Added ${successCount} contracts, but ${failureCount} failed`);
+      } else {
+        toast.error(`Failed to add any contracts`);
+      }
+    } catch (error) {
+      console.error("Error processing contracts:", error);
+      toast.error(`Error processing contracts: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    } finally {
+      setIsProcessing(false);
+
+      // Reset the form
+      setFile(null);
+      setHeaders([]);
+      setMappings({});
+      setFileData([]);
+      if (fileInputRef.current) {
+        fileInputRef.current.value = "";
+      }
     }
-  }, [fileData, mappings]);
+  }, [fileData, mappings, user?.organization_id]);
 
   // Reset the form
   const resetForm = () => {
