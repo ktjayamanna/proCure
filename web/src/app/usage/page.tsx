@@ -82,6 +82,33 @@ export default function UsagePage() {
           </Button>
         </div>
 
+        {/* Metrics Overview */}
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+          {/* Total Spend */}
+          <div className="bg-card p-4 rounded-lg shadow-sm border">
+            <div className="text-sm text-muted-foreground">Total Spend</div>
+            <div className="text-2xl font-bold mt-1">$280,500</div>
+          </div>
+
+          {/* Number of Vendors */}
+          <div className="bg-card p-4 rounded-lg shadow-sm border">
+            <div className="text-sm text-muted-foreground"># of Vendors</div>
+            <div className="text-2xl font-bold mt-1">28</div>
+          </div>
+
+          {/* Percentage Underutilized */}
+          <div className="bg-card p-4 rounded-lg shadow-sm border">
+            <div className="text-sm text-muted-foreground">% Underutilized</div>
+            <div className="text-2xl font-bold mt-1">18%</div>
+          </div>
+
+          {/* Potential Savings */}
+          <div className="bg-card p-4 rounded-lg shadow-sm border">
+            <div className="text-sm text-muted-foreground">Potential Savings</div>
+            <div className="text-2xl font-bold mt-1">$41,200</div>
+          </div>
+        </div>
+
         <div className="bg-card p-6 rounded-lg shadow-sm">
           <div className="p-4 border rounded-md">
             <h3 className="font-medium mb-2">
