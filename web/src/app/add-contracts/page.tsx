@@ -310,7 +310,7 @@ export default function AddContractsPage() {
                               </ul>
                             </li>
                             <li>
-                              <span className="font-medium">Contract Status:</span> Current status of the contract
+                              <span className="font-medium">Contract Status:</span> Current status
                               <ul className="list-disc pl-5 mt-1">
                                 {CONTRACT_STATUSES.map((status) => (
                                   <li key={status} className="text-sm text-muted-foreground">{status}</li>
@@ -458,7 +458,7 @@ export default function AddContractsPage() {
                             </ul>
                           </li>
                           <li>
-                            <span className="font-medium">Contract Status:</span> Current status of the contract
+                            <span className="font-medium">Contract Status:</span> Current status
                             <ul className="list-disc pl-5 mt-1">
                               {CONTRACT_STATUSES.map((status) => (
                                 <li key={status} className="text-sm text-muted-foreground">{status}</li>
