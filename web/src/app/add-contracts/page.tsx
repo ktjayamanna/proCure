@@ -17,19 +17,20 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/co
 // Define the required and optional fields for contracts
 const REQUIRED_FIELDS = [
   { id: "vendor_name", label: "Vendor Name" },
-  { id: "annual_spend", label: "Annual Spend" },
-  { id: "contract_type", label: "Contract Type" },
-  { id: "contract_status", label: "Contract Status" },
-  { id: "payment_type", label: "Payment Type" },
   { id: "product_url", label: "Product URL" },
   { id: "number_of_seats", label: "Number of Seats" },
 ];
 
 const OPTIONAL_FIELDS = [
+  { id: "annual_spend", label: "Annual Spend" },
+  { id: "contract_type", label: "Contract Type" },
+  { id: "contract_status", label: "Contract Status" },
+  { id: "payment_type", label: "Payment Type" },
   { id: "owner", label: "Owner" },
   { id: "expire_at", label: "Expire At" },
   { id: "created_at", label: "Created At" },
-  { id: "notes", label: "Notes" },
+  { id: "notes", label: "Notes" }
+
 ];
 
 // Contract type options
@@ -281,6 +282,24 @@ export default function AddContractsPage() {
                           <h3 className="font-medium mb-2">Required Fields</h3>
                           <ul className="list-disc pl-5 space-y-2">
                             <li><span className="font-medium">Vendor Name:</span> Name of the vendor/company</li>
+                            <li><span className="font-medium">Product URL:</span> URL of the product/service
+                              <ul className="list-none pl-4 pt-1 space-y-1">
+                                <li><span className="text-blue-600 font-mono px-1 py-0.5 bg-blue-50 rounded border border-blue-200">https://app.slack.com</span></li>
+                                <li><span className="text-blue-600 font-mono px-1 py-0.5 bg-blue-50 rounded border border-blue-200">https://github.com</span></li>
+                                <li><span className="text-blue-600 font-mono px-1 py-0.5 bg-blue-50 rounded border border-blue-200">https://aws.amazon.com</span></li>
+                              </ul>
+                            </li>
+                            <li><span className="font-medium">Number of Seats:</span> Number of licenses/seats</li>
+                          </ul>
+                        </div>
+
+                        <div>
+                          <h3 className="font-medium mb-2">Optional Fields</h3>
+                          <ul className="list-disc pl-5 space-y-2">
+                            <li><span className="font-medium">Owner:</span> Person responsible for the contract</li>
+                            <li><span className="font-medium">Expire At:</span> Contract expiration date</li>
+                            <li><span className="font-medium">Created At:</span> Contract creation date</li>
+                            <li><span className="font-medium">Notes:</span> Additional information about the contract</li>
                             <li><span className="font-medium">Annual Spend:</span> Annual cost of the contract</li>
                             <li>
                               <span className="font-medium">Contract Type:</span> Type of contract
@@ -306,24 +325,6 @@ export default function AddContractsPage() {
                                 ))}
                               </ul>
                             </li>
-                            <li><span className="font-medium">Product URL:</span> URL of the product/service
-                              <ul className="list-none pl-4 pt-1 space-y-1">
-                                <li><span className="text-blue-600 font-mono px-1 py-0.5 bg-blue-50 rounded border border-blue-200">https://app.slack.com</span></li>
-                                <li><span className="text-blue-600 font-mono px-1 py-0.5 bg-blue-50 rounded border border-blue-200">https://github.com</span></li>
-                                <li><span className="text-blue-600 font-mono px-1 py-0.5 bg-blue-50 rounded border border-blue-200">https://aws.amazon.com</span></li>
-                              </ul>
-                            </li>
-                            <li><span className="font-medium">Number of Seats:</span> Number of licenses/seats</li>
-                          </ul>
-                        </div>
-
-                        <div>
-                          <h3 className="font-medium mb-2">Optional Fields</h3>
-                          <ul className="list-disc pl-5 space-y-2">
-                            <li><span className="font-medium">Owner:</span> Person responsible for the contract</li>
-                            <li><span className="font-medium">Expire At:</span> Contract expiration date</li>
-                            <li><span className="font-medium">Created At:</span> Contract creation date</li>
-                            <li><span className="font-medium">Notes:</span> Additional information about the contract</li>
                           </ul>
                         </div>
                       </div>
@@ -432,8 +433,22 @@ export default function AddContractsPage() {
                       <div>
                         <h3 className="font-medium mb-2">Required Fields</h3>
                         <ul className="list-disc pl-5 space-y-2">
-                          <li><span className="font-medium">Vendor Name:</span> Name of the vendor/company</li>
-                          <li><span className="font-medium">Annual Spend:</span> Annual cost of the contract</li>
+                          <li><span className="font-medium">Vendor Name:</span> Name of the vendor</li>
+                          <li><span className="font-medium">Product URL:</span> URL of the product/service
+                            <ul className="list-none pl-4 pt-1 space-y-1">
+                              <li><span className="text-blue-600 font-mono px-1 py-0.5 bg-blue-50 rounded border border-blue-200">https://app.slack.com</span></li>
+                              <li><span className="text-blue-600 font-mono px-1 py-0.5 bg-blue-50 rounded border border-blue-200">https://github.com</span></li>
+                              <li><span className="text-blue-600 font-mono px-1 py-0.5 bg-blue-50 rounded border border-blue-200">https://aws.amazon.com</span></li>
+                            </ul>
+                          </li>
+                          <li><span className="font-medium">Number of Seats:</span> Number of licenses</li>
+                        </ul>
+                      </div>
+
+                      <div>
+                        <h3 className="font-medium mb-2">Optional Fields</h3>
+                        <ul className="list-disc pl-5 space-y-2">
+                        <li><span className="font-medium">Annual Spend:</span> Annual cost of the contract</li>
                           <li>
                             <span className="font-medium">Contract Type:</span> Type of contract
                             <ul className="list-disc pl-5 mt-1">
@@ -458,24 +473,10 @@ export default function AddContractsPage() {
                               ))}
                             </ul>
                           </li>
-                          <li><span className="font-medium">Product URL:</span> URL of the product/service
-                            <ul className="list-none pl-4 pt-1 space-y-1">
-                              <li><span className="text-blue-600 font-mono px-1 py-0.5 bg-blue-50 rounded border border-blue-200">https://app.slack.com</span></li>
-                              <li><span className="text-blue-600 font-mono px-1 py-0.5 bg-blue-50 rounded border border-blue-200">https://github.com</span></li>
-                              <li><span className="text-blue-600 font-mono px-1 py-0.5 bg-blue-50 rounded border border-blue-200">https://aws.amazon.com</span></li>
-                            </ul>
-                          </li>
-                          <li><span className="font-medium">Number of Seats:</span> Number of licenses/seats</li>
-                        </ul>
-                      </div>
-
-                      <div>
-                        <h3 className="font-medium mb-2">Optional Fields</h3>
-                        <ul className="list-disc pl-5 space-y-2">
                           <li><span className="font-medium">Owner:</span> Person responsible for the contract</li>
                           <li><span className="font-medium">Expire At:</span> Contract expiration date</li>
                           <li><span className="font-medium">Created At:</span> Contract creation date</li>
-                          <li><span className="font-medium">Notes:</span> Additional information about the contract</li>
+                          <li><span className="font-medium">Notes:</span> Additional information</li>
                         </ul>
                       </div>
                     </div>
