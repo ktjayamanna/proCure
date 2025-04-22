@@ -45,10 +45,9 @@ const CONTRACT_STATUSES = ["active", "inactive"];
 
 // Payment type options
 const PAYMENT_TYPES = [
-  "In app purchases",
-  "virtual cards",
-  "ACH",
-  "International Wire",
+  "ach transfer",
+  "international wire",
+  "credit card payment",
   "other",
 ];
 
@@ -307,7 +306,13 @@ export default function AddContractsPage() {
                                 ))}
                               </ul>
                             </li>
-                            <li><span className="font-medium">Product URL:</span> URL of the product/service</li>
+                            <li><span className="font-medium">Product URL:</span> URL of the product/service
+                              <ul className="list-none pl-4 pt-1 space-y-1">
+                                <li><span className="text-blue-600 font-mono px-1 py-0.5 bg-blue-50 rounded border border-blue-200">https://app.slack.com</span></li>
+                                <li><span className="text-blue-600 font-mono px-1 py-0.5 bg-blue-50 rounded border border-blue-200">https://github.com</span></li>
+                                <li><span className="text-blue-600 font-mono px-1 py-0.5 bg-blue-50 rounded border border-blue-200">https://aws.amazon.com</span></li>
+                              </ul>
+                            </li>
                             <li><span className="font-medium">Number of Seats:</span> Number of licenses/seats</li>
                           </ul>
                         </div>
@@ -453,7 +458,13 @@ export default function AddContractsPage() {
                               ))}
                             </ul>
                           </li>
-                          <li><span className="font-medium">Product URL:</span> URL of the product/service</li>
+                          <li><span className="font-medium">Product URL:</span> URL of the product/service
+                            <ul className="list-none pl-4 pt-1 space-y-1">
+                              <li><span className="text-blue-600 font-mono px-1 py-0.5 bg-blue-50 rounded border border-blue-200">https://app.slack.com</span></li>
+                              <li><span className="text-blue-600 font-mono px-1 py-0.5 bg-blue-50 rounded border border-blue-200">https://github.com</span></li>
+                              <li><span className="text-blue-600 font-mono px-1 py-0.5 bg-blue-50 rounded border border-blue-200">https://aws.amazon.com</span></li>
+                            </ul>
+                          </li>
                           <li><span className="font-medium">Number of Seats:</span> Number of licenses/seats</li>
                         </ul>
                       </div>
