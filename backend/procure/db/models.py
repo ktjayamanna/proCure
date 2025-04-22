@@ -93,7 +93,7 @@ class Vendor(Base):
     contract_type   = Column(String(255), nullable=True)
     contract_status = Column(String(255), nullable=True)
     payment_type    = Column(String(255), nullable=True)
-    num_seats       = Column(Integer, default=1)
+    num_seats       = Column(Integer, default=1, nullable=False)
     notes           = Column(String(1000), nullable=True)
 
     owner = relationship(

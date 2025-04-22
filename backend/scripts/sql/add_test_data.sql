@@ -22,109 +22,118 @@ INSERT INTO users (id, email, hashed_password, is_active, is_superuser, is_verif
 ON CONFLICT (email) DO NOTHING;
 
 -- Add vendor entries for test employees
-INSERT INTO vendor (vendor_name, url, owner_id, created_at, organization_id)
+INSERT INTO vendor (vendor_name, url, owner_id, created_at, organization_id, num_seats)
 SELECT
     'Google Workspace',
     'https://mail.google.com',
     id,
     NOW(),
-    'org_abcdefghijklmnopqrstuvwxyz123456'
+    'org_abcdefghijklmnopqrstuvwxyz123456',
+    50
 FROM users
 WHERE email = 'gcahill@firebaystudios.com'
 ON CONFLICT DO NOTHING;
 
-INSERT INTO vendor (vendor_name, url, owner_id, created_at, organization_id)
+INSERT INTO vendor (vendor_name, url, owner_id, created_at, organization_id, num_seats)
 SELECT
     'ChatGPT',
     'https://chatgpt.com',
     id,
     NOW(),
-    'org_abcdefghijklmnopqrstuvwxyz123456'
+    'org_abcdefghijklmnopqrstuvwxyz123456',
+    25
 FROM users
 WHERE email = 'gcahill@firebaystudios.com'
 ON CONFLICT DO NOTHING;
 
-INSERT INTO vendor (vendor_name, url, owner_id, created_at, organization_id)
+INSERT INTO vendor (vendor_name, url, owner_id, created_at, organization_id, num_seats)
 SELECT
     'Slack',
     'https://app.slack.com',
     id,
     NOW(),
-    'org_bcdefghijklmnopqrstuvwxyz1234567'
+    'org_bcdefghijklmnopqrstuvwxyz1234567',
+    20
 FROM users
 WHERE email = 'test2@example.com'
 ON CONFLICT DO NOTHING;
 
-INSERT INTO vendor (vendor_name, url, owner_id, created_at, organization_id)
+INSERT INTO vendor (vendor_name, url, owner_id, created_at, organization_id, num_seats)
 SELECT
     'GitHub',
     'https://github.com',
     id,
     NOW(),
-    'org_cdefghijklmnopqrstuvwxyz12345678'
+    'org_cdefghijklmnopqrstuvwxyz12345678',
+    10
 FROM users
 WHERE email = 'test3@example.com'
 ON CONFLICT DO NOTHING;
 
-INSERT INTO vendor (vendor_name, url, owner_id, created_at, organization_id)
+INSERT INTO vendor (vendor_name, url, owner_id, created_at, organization_id, num_seats)
 SELECT
     'Trello',
     'https://trello.com',
     id,
     NOW(),
-    'org_cdefghijklmnopqrstuvwxyz12345678'
+    'org_cdefghijklmnopqrstuvwxyz12345678',
+    5
 FROM users
 WHERE email = 'test3@example.com'
 ON CONFLICT DO NOTHING;
 
-INSERT INTO vendor (vendor_name, url, owner_id, created_at, organization_id)
+INSERT INTO vendor (vendor_name, url, owner_id, created_at, organization_id, num_seats)
 SELECT
     'Zoom',
     'https://zoom.us',
     id,
     NOW(),
-    'org_cdefghijklmnopqrstuvwxyz12345678'
+    'org_cdefghijklmnopqrstuvwxyz12345678',
+    15
 FROM users
 WHERE email = 'test3@example.com'
 ON CONFLICT DO NOTHING;
 
 -- Add vendor entries for acme.com employees
-INSERT INTO vendor (vendor_name, url, owner_id, created_at, organization_id)
+INSERT INTO vendor (vendor_name, url, owner_id, created_at, organization_id, num_seats)
 SELECT
     'Salesforce',
     'https://salesforce.com',
     id,
     NOW(),
-    'org_defghijklmnopqrstuvwxyz123456789'
+    'org_defghijklmnopqrstuvwxyz123456789',
+    25
 FROM users
 WHERE email = 'admin@acme.com'
 ON CONFLICT DO NOTHING;
 
-INSERT INTO vendor (vendor_name, url, owner_id, created_at, organization_id)
+INSERT INTO vendor (vendor_name, url, owner_id, created_at, organization_id, num_seats)
 SELECT
     'Jira',
     'https://jira.atlassian.com',
     id,
     NOW(),
-    'org_defghijklmnopqrstuvwxyz123456789'
+    'org_defghijklmnopqrstuvwxyz123456789',
+    30
 FROM users
 WHERE email = 'member@acme.com'
 ON CONFLICT DO NOTHING;
 
 -- Add vendor entry for startup.io employee
-INSERT INTO vendor (vendor_name, url, owner_id, created_at, organization_id)
+INSERT INTO vendor (vendor_name, url, owner_id, created_at, organization_id, num_seats)
 SELECT
     'Notion',
     'https://notion.so',
     id,
     NOW(),
-    'org_efghijklmnopqrstuvwxyz1234567890'
+    'org_efghijklmnopqrstuvwxyz1234567890',
+    3
 FROM users
 WHERE email = 'ceo@startup.io'
 ON CONFLICT DO NOTHING;
 
 -- Query to verify the data
-SELECT u.email, o.company_name, o.domain_name, v.vendor_name, v.url
+SELECT u.email, o.company_name, o.domain_name, v.vendor_name, v.url, v.num_seats
 FROM users u
 JOIN organizations o ON u.organization_id = o.organization_id
 JOIN vendor v ON u.id = v.owner_id
