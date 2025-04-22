@@ -3,6 +3,7 @@ Pydantic schemas for vendor operations in the proCure application.
 """
 
 from typing import Optional
+from datetime import datetime
 from pydantic import BaseModel, Field
 
 class VendorContractRequest(BaseModel):
@@ -16,6 +17,8 @@ class VendorContractRequest(BaseModel):
     payment_type: Optional[str] = Field(None, description="Type of payment")
     num_seats: Optional[int] = Field(1, description="Number of seats purchased")
     notes: Optional[str] = Field(None, description="Additional notes about the contract")
+    expire_at: Optional[datetime] = Field(None, description="Contract expiration date")
+    created_at: Optional[datetime] = Field(None, description="Contract creation date")
 
 class VendorContractResponse(BaseModel):
     """Response model for vendor contract operations."""

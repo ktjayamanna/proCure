@@ -6,6 +6,7 @@ import logging
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import SQLAlchemyError, IntegrityError
+from datetime import datetime
 
 from procure.server.utils import normalize_url
 
@@ -74,6 +75,13 @@ async def add_vendor_contract(
             notes=contract_data.notes
         )
 
+        # Set date fields if provided
+        if contract_data.expire_at:
+            new_vendor.expire_at = contract_data.expire_at
+
+        if contract_data.created_at:
+            new_vendor.created_at = contract_data.created_at
+
         # Try to add the new vendor
         db.add(new_vendor)
         db.flush()
@@ -112,6 +120,13 @@ async def add_vendor_contract(
                     existing_vendor.num_seats = contract_data.num_seats
                     existing_vendor.notes = contract_data.notes
                     existing_vendor.owner_id = user.id  # Update the owner to the current user
+
+                    # Update date fields if provided
+                    if contract_data.expire_at:
+                        existing_vendor.expire_at = contract_data.expire_at
+
+                    if contract_data.created_at:
+                        existing_vendor.created_at = contract_data.created_at
 
                     # Commit the changes
                     db.commit()

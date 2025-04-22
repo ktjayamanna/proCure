@@ -12,6 +12,8 @@ export interface VendorContract {
   payment_type?: string;
   num_seats?: number;
   notes?: string;
+  expire_at?: string; // ISO date string format
+  created_at?: string; // ISO date string format
 }
 
 export interface VendorContractResponse {

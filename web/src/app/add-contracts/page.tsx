@@ -222,6 +222,31 @@ export default function AddContractsPage() {
             notes: contract.notes
           };
 
+          // Format date fields if they exist
+          if (contract.expire_at) {
+            try {
+              // Parse the date and convert to ISO format
+              const expireDate = new Date(contract.expire_at);
+              if (!isNaN(expireDate.getTime())) {
+                contractData.expire_at = expireDate.toISOString();
+              }
+            } catch (error) {
+              console.warn("Invalid expire_at date format:", contract.expire_at);
+            }
+          }
+
+          if (contract.created_at) {
+            try {
+              // Parse the date and convert to ISO format
+              const createdDate = new Date(contract.created_at);
+              if (!isNaN(createdDate.getTime())) {
+                contractData.created_at = createdDate.toISOString();
+              }
+            } catch (error) {
+              console.warn("Invalid created_at date format:", contract.created_at);
+            }
+          }
+
           // Call the API to add the contract
           const result = await addVendorContract(contractData);
 
