@@ -18,7 +18,7 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { useAuth } from "@/lib/auth/auth-context";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+// Card components are imported in the parent component
 
 // Form validation schema
 const formSchema = z.object({
@@ -48,8 +48,6 @@ export default function SignUpForm() {
   const { onSignUp } = useAuth();
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
-  const [isSuccess, setIsSuccess] = useState(false);
-  const [userRole, setUserRole] = useState<"member" | "admin">("member");
 
   // Initialize form
   const form = useForm<z.infer<typeof formSchema>>({
@@ -68,7 +66,13 @@ export default function SignUpForm() {
     try {
       await onSignUp(values.email, values.password, values.role);
       toast.success("Account created successfully!");
-      router.push("/dashboard");
+
+      // Redirect admin users to the usage page, regular users to the dashboard
+      if (values.role === "admin") {
+        router.push("/usage");
+      } else {
+        router.push("/dashboard");
+      }
     } catch (error) {
       console.error("Registration error:", error);
       if (error instanceof Error) {

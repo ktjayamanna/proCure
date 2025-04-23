@@ -7,8 +7,8 @@ interface AuthContextType {
   isLoading: boolean;
   error: string;
   user: User | null;
-  onLogin: (email: string, password: string) => Promise<void>;
-  onSignUp: (email: string, password: string, role?: string) => Promise<void>;
+  onLogin: (email: string, password: string) => Promise<User>;
+  onSignUp: (email: string, password: string, role?: string) => Promise<User>;
   onLogout: () => Promise<void>;
 }
 
@@ -27,7 +27,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       try {
         // Try to get current user
         const user = await getCurrentUser();
-        
+
         setState({
           isLoading: false,
           error: "",
@@ -55,6 +55,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         error: "",
         user,
       });
+      return user; // Return the user object
     } catch (error) {
       console.error("Login error:", error);
       let errorMessage = "Failed to sign in";
@@ -68,7 +69,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         isLoading: false,
         error: errorMessage,
       }));
-      
+
       // Re-throw the error so the component can handle it
       throw error;
     }
@@ -84,6 +85,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         error: "",
         user,
       });
+      return user; // Return the user object
     } catch (error) {
       console.error("Sign up error:", error);
       let errorMessage = "Failed to sign up";
@@ -97,7 +99,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         isLoading: false,
         error: errorMessage,
       }));
-      
+
       // Re-throw the error so the component can handle it
       throw error;
     }

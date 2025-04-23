@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useCallback } from "react";
+import { useState, useRef, useCallback, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/lib/auth/auth-context";
 import ProtectedRoute from "@/components/auth/protected-route";
@@ -11,9 +11,17 @@ import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import Papa from "papaparse";
 import * as XLSX from "xlsx";
-import { HelpCircle, InfoIcon } from "lucide-react";
+import { HelpCircle, InfoIcon, Settings } from "lucide-react";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { addContract, Contract } from "@/lib/api/contract-api";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import { getOrganizationName } from "@/lib/api/organization-api";
 
 // Define the required and optional fields for contracts
 const REQUIRED_FIELDS = [
@@ -54,9 +62,37 @@ const PAYMENT_TYPES = [
 ];
 
 export default function AddContractsPage() {
-  const { user } = useAuth(); // Auth is handled by ProtectedRoute
+  const { user, onLogout } = useAuth(); // Auth is handled by ProtectedRoute
   const router = useRouter();
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [organization, setOrganization] = useState<{ domain_name: string; company_name?: string } | null>(null);
+  const [isLoadingOrg, setIsLoadingOrg] = useState<boolean>(false);
+  const [orgError, setOrgError] = useState<string>("");
+
+  const handleLogout = async () => {
+    await onLogout();
+    router.push("/login");
+  };
+
+  useEffect(() => {
+    const fetchOrgName = async () => {
+      if (user?.organization_id) {
+        try {
+          setIsLoadingOrg(true);
+          setOrgError("");
+          const orgData = await getOrganizationName(user.organization_id);
+          setOrganization(orgData);
+        } catch (err) {
+          console.error("Error fetching organization name:", err);
+          setOrgError("Could not load organization name");
+        } finally {
+          setIsLoadingOrg(false);
+        }
+      }
+    };
+
+    fetchOrgName();
+  }, [user?.organization_id]);
 
   const [file, setFile] = useState<File | null>(null);
   const [headers, setHeaders] = useState<string[]>([]);
@@ -314,9 +350,59 @@ export default function AddContractsPage() {
       <div className="container mx-auto py-10 max-w-4xl">
         <div className="flex justify-between items-center mb-8">
           <h1 className="text-3xl font-bold">Add Contracts</h1>
-          <Button variant="outline" onClick={() => router.push('/dashboard')}>
-            Back to Dashboard
-          </Button>
+          <div className="flex items-center gap-2">
+            {user?.role === "admin" && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => router.push('/usage')}
+              >
+                View SaaS Usage
+              </Button>
+            )}
+            <Dialog>
+              <DialogTrigger asChild>
+                <Button variant="ghost" size="icon" className="rounded-full">
+                  <Settings className="h-5 w-5" />
+                  <span className="sr-only">Settings</span>
+                </Button>
+              </DialogTrigger>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>Account Information</DialogTitle>
+                </DialogHeader>
+                <div className="mt-4 space-y-3">
+                  <div>
+                    <p className="text-sm font-medium text-muted-foreground">Email</p>
+                    <p>{user?.email}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium text-muted-foreground">Role</p>
+                    <p>{user?.role || "Member"}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium text-muted-foreground">Organization</p>
+                    <p>
+                      {isLoadingOrg ? (
+                        <span className="text-muted-foreground italic">Loading...</span>
+                      ) : orgError ? (
+                        <span className="text-destructive">{orgError}</span>
+                      ) : organization ? (
+                        <span>{organization.company_name || organization.domain_name}</span>
+                      ) : (
+                        <span className="text-muted-foreground">Not assigned</span>
+                      )}
+                    </p>
+                  </div>
+                  <div className="pt-4 border-t">
+                    <Button variant="destructive" onClick={handleLogout} className="w-full">
+                      Sign out
+                    </Button>
+                  </div>
+                </div>
+              </DialogContent>
+            </Dialog>
+          </div>
         </div>
 
         <Card>

@@ -48,9 +48,15 @@ export default function LoginForm() {
     setIsLoading(true);
 
     try {
-      await onLogin(values.email, values.password);
+      const user = await onLogin(values.email, values.password);
       toast.success("Signed in successfully!");
-      router.push("/dashboard");
+
+      // Redirect admin users to the usage page, regular users to the dashboard
+      if (user?.role === "admin") {
+        router.push("/usage");
+      } else {
+        router.push("/dashboard");
+      }
     } catch (error) {
       console.error("Login error:", error);
       if (error instanceof Error) {

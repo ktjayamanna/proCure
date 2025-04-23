@@ -23,6 +23,12 @@ export default function DashboardPage() {
   const [error, setError] = useState<string>("");
 
   useEffect(() => {
+    // Redirect admin users to the usage page
+    if (user?.role === "admin") {
+      router.push('/usage');
+      return;
+    }
+
     const fetchOrgName = async () => {
       if (user?.organization_id) {
         try {
@@ -40,7 +46,7 @@ export default function DashboardPage() {
     };
 
     fetchOrgName();
-  }, [user?.organization_id]);
+  }, [user?.organization_id, user?.role, router]);
 
   const handleLogout = async () => {
     await onLogout();
@@ -98,48 +104,28 @@ export default function DashboardPage() {
 
         <div className="bg-card p-6 rounded-lg shadow-sm">
           <h2 className="text-xl font-semibold mb-4">Welcome, {user?.email}</h2>
-          <div className="grid gap-4">
-            {user?.role === "admin" ? (
-              <div className="p-4 border rounded-md">
-                <h3 className="font-medium mb-4">Quick Actions</h3>
-                <div className="flex flex-col sm:flex-row gap-3">
-                  <Button
-                    onClick={() => router.push('/usage')}
-                    className="w-full sm:w-auto"
+          {user?.role !== "admin" && (
+            <div className="p-4 border rounded-md">
+              <h3 className="text-lg font-semibold mb-4">How to get started</h3>
+              <ol className="list-decimal list-inside space-y-4">
+                <li className="text-base text-muted-foreground leading-relaxed">
+                  <span>Download the proCure Chrome extension: </span>
+                  <a
+                    href="chrome://extensions/?id=hgpfmdimilcnlacmpkjbieaikidlabkg"
+                    className="text-primary font-medium hover:underline"
                   >
-                    View SaaS Usage
-                  </Button>
-                  <Button
-                    onClick={() => router.push('/add-contracts')}
-                    className="w-full sm:w-auto"
-                  >
-                    Add Contracts
-                  </Button>
-                </div>
-              </div>
-            ) : (
-              <div className="p-4 border rounded-md">
-                <h3 className="text-lg font-semibold mb-4">How to get started</h3>
-                <ol className="list-decimal list-inside space-y-4">
-                  <li className="text-base text-muted-foreground leading-relaxed">
-                    <span>Download the proCure Chrome extension: </span>
-                    <a
-                      href="chrome://extensions/?id=hgpfmdimilcnlacmpkjbieaikidlabkg"
-                      className="text-primary font-medium hover:underline"
-                    >
-                      Open Extension
-                    </a>
-                  </li>
-                  <li className="text-base text-muted-foreground leading-relaxed">
-                    Sign in using the same credentials you used here (no need to sign up again)
-                  </li>
-                  <li className="text-base text-muted-foreground leading-relaxed italic">
-                    Set it and forget it!
-                  </li>
-                </ol>
-              </div>
-            )}
-          </div>
+                    Open Extension
+                  </a>
+                </li>
+                <li className="text-base text-muted-foreground leading-relaxed">
+                  Sign in using the same credentials you used here (no need to sign up again)
+                </li>
+                <li className="text-base text-muted-foreground leading-relaxed italic">
+                  Set it and forget it!
+                </li>
+              </ol>
+            </div>
+          )}
         </div>
       </div>
     </ProtectedRoute>

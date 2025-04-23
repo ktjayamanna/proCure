@@ -6,15 +6,27 @@ import { Button } from "@/components/ui/button";
 import { useRouter } from "next/navigation";
 import { useState, useEffect, useMemo } from "react";
 import { getOrganizationName, getContractUsage, ContractUsageData } from "@/lib/api/organization-api";
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { ChevronLeft, ChevronRight, Settings } from "lucide-react";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 
 export default function UsagePage() {
-  const { user } = useAuth();
+  const { user, onLogout } = useAuth();
   const router = useRouter();
   const [organization, setOrganization] = useState<{ domain_name: string; company_name?: string } | null>(null);
   const [contractUsage, setContractUsage] = useState<ContractUsageData[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [error, setError] = useState<string>("");
+
+  const handleLogout = async () => {
+    await onLogout();
+    router.push("/login");
+  };
 
   // Pagination state
   const [currentPage, setCurrentPage] = useState<number>(1);
@@ -107,9 +119,59 @@ export default function UsagePage() {
       <div className="container mx-auto py-10 max-w-4xl">
         <div className="flex justify-between items-center mb-8">
           <h1 className="text-3xl font-bold">SaaS Usage</h1>
-          <Button variant="outline" onClick={() => router.push('/dashboard')}>
-            Back to Dashboard
-          </Button>
+          <div className="flex items-center gap-2">
+            {user?.role === "admin" && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => router.push('/add-contracts')}
+              >
+                Add Contracts
+              </Button>
+            )}
+            <Dialog>
+              <DialogTrigger asChild>
+                <Button variant="ghost" size="icon" className="rounded-full">
+                  <Settings className="h-5 w-5" />
+                  <span className="sr-only">Settings</span>
+                </Button>
+              </DialogTrigger>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>Account Information</DialogTitle>
+                </DialogHeader>
+                <div className="mt-4 space-y-3">
+                  <div>
+                    <p className="text-sm font-medium text-muted-foreground">Email</p>
+                    <p>{user?.email}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium text-muted-foreground">Role</p>
+                    <p>{user?.role || "Member"}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium text-muted-foreground">Organization</p>
+                    <p>
+                      {isLoading ? (
+                        <span className="text-muted-foreground italic">Loading...</span>
+                      ) : error ? (
+                        <span className="text-destructive">{error}</span>
+                      ) : organization ? (
+                        <span>{organization.company_name || organization.domain_name}</span>
+                      ) : (
+                        <span className="text-muted-foreground">Not assigned</span>
+                      )}
+                    </p>
+                  </div>
+                  <div className="pt-4 border-t">
+                    <Button variant="destructive" onClick={handleLogout} className="w-full">
+                      Sign out
+                    </Button>
+                  </div>
+                </div>
+              </DialogContent>
+            </Dialog>
+          </div>
         </div>
 
         {/* Metrics Overview */}
@@ -174,7 +236,7 @@ export default function UsagePage() {
         <div className="bg-card p-6 rounded-lg shadow-sm">
           <div className="p-4 border rounded-md">
             <h3 className="font-medium mb-2">
-              {organization?.company_name || organization?.domain_name || "Organization"} {new Date().toLocaleString('default', { month: 'short' })} Active Usage of Purchased SaaS
+              {organization?.company_name || organization?.domain_name || "Organization"} {new Date().toLocaleString('default', { month: 'long', year: 'numeric' })} Software Usage
             </h3>
             <div className="p-4 border border-dashed rounded-md bg-muted/50 flex flex-col items-center justify-center">
               <div className="grid grid-cols-1 gap-4 w-full max-w-md">
