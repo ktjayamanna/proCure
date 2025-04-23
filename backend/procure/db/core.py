@@ -1,7 +1,8 @@
-from sqlalchemy import select, and_, func
+from sqlalchemy import select
 from sqlalchemy.orm import Session
+from sqlalchemy.sql import text
 from datetime import datetime, timezone
-from typing import List, Dict, Any, Optional, Tuple
+from typing import List, Dict, Any, Optional
 
 from procure.db.models import Contract, Organization, User, UserActivity
 from procure.server.utils import get_base_domain
@@ -33,8 +34,8 @@ def process_url_visits(
     This function performs most operations at the database level for efficiency:
     1. Finds the user by email
     2. Extracts base domains from entry URLs using tldextract
-    3. Matches entry domains with vendor domains in contracts
-    4. Checks which matched URLs don't already have activities for today
+    3. Uses SQLAlchemy to match entry domains with vendor domains in contracts
+    4. Filters out URLs that already have activities for today
     5. Creates new activities for those URLs
     """
     # Get user
@@ -47,7 +48,7 @@ def process_url_visits(
         }
 
     # Extract URLs from entries with their metadata and get their base domains
-    entry_data = []
+    entry_domains = []
     for entry in entries:
         url = entry["url"]
         browser = entry["browser"]
@@ -55,12 +56,12 @@ def process_url_visits(
         try:
             # Extract the base domain from the URL
             base_domain = get_base_domain(url)
-            entry_data.append((url, base_domain, browser, timestamp))
+            entry_domains.append((base_domain, browser, timestamp))
         except Exception as e:
             # Skip invalid URLs
             continue
 
-    if not entry_data:
+    if not entry_domains:
         return {
             "success": True,
             "processed": len(entries),
@@ -71,23 +72,25 @@ def process_url_visits(
     # Get today's date for activity filtering
     today = datetime.now(timezone.utc).date()
 
-    # Find matches between entry domains and vendor domains in contracts
-    matched_entries: List[Tuple[int, str, int]] = []  # (contract_id, browser, timestamp)
+    # Extract just the domains for the SQL IN clause
+    domains = [domain for domain, _, _ in entry_domains]
 
-    # Get all vendor domains and their contract_ids
-    contract_stmt = select(Contract.contract_id, Contract.vendor_domain).where(
-        Contract.organization_id == user.organization_id
-    )
-    contract_data = [(row[0], row[1]) for row in db.execute(contract_stmt)]
+    # Use a more direct approach with SQLAlchemy
+    # First, get all contracts that match the domains
+    contracts_query = text("""
+        SELECT c.contract_id, c.vendor_domain
+        FROM contracts c
+        WHERE c.organization_id = :org_id
+        AND c.vendor_domain IN :domains
+    """)
 
-    # Match entry domains with vendor domains
-    for _, entry_domain, browser, timestamp in entry_data:
-        for contract_id, vendor_domain in contract_data:
-            if entry_domain == vendor_domain:  # Exact match of domains
-                matched_entries.append((contract_id, browser, timestamp))
-                break  # Found a match, move to next entry
+    # Execute the query to get matching contracts
+    matching_contracts = db.execute(
+        contracts_query,
+        {"org_id": user.organization_id, "domains": tuple(domains)}
+    ).fetchall()
 
-    if not matched_entries:
+    if not matching_contracts:
         return {
             "success": True,
             "processed": len(entries),
@@ -95,19 +98,47 @@ def process_url_visits(
             "message": "No matching URLs found"
         }
 
-    # Get contract_ids that already have activities for today
-    contract_ids_to_check = [contract_id for contract_id, _, _ in matched_entries]
-    existing_activities_stmt = (
-        select(UserActivity.contract_id)
-        .where(and_(
-            UserActivity.user_id == user.id,
-            UserActivity.contract_id.in_(contract_ids_to_check),
-            func.date(UserActivity.date) == today
-        ))
-    )
-    existing_contract_ids = {row[0] for row in db.execute(existing_activities_stmt)}
+    # Get contract IDs that already have activities for today
+    contract_ids = [contract[0] for contract in matching_contracts]
 
-    # Create new activities for contract_ids not yet recorded today
+    existing_activities_query = text("""
+        SELECT ua.contract_id
+        FROM user_activities ua
+        WHERE ua.user_id = :user_id
+        AND ua.contract_id IN :contract_ids
+        AND DATE(ua.date) = :today
+    """)
+
+    existing_contract_ids = {
+        row[0] for row in db.execute(
+            existing_activities_query,
+            {"user_id": user.id, "contract_ids": tuple(contract_ids), "today": today}
+        )
+    }
+
+    # Create a mapping of domain to (browser, timestamp)
+    domain_to_metadata = {}
+    for domain, browser, timestamp in entry_domains:
+        # If we have multiple entries for the same domain, use the most recent one
+        if domain not in domain_to_metadata or timestamp > domain_to_metadata[domain][1]:
+            domain_to_metadata[domain] = (browser, timestamp)
+
+    # Create new activities for contracts that don't have activities today
+    matched_entries = []
+    for contract_id, vendor_domain in matching_contracts:
+        if contract_id not in existing_contract_ids and vendor_domain in domain_to_metadata:
+            browser, timestamp = domain_to_metadata[vendor_domain]
+            matched_entries.append((contract_id, browser, timestamp))
+
+    if not matched_entries:
+        return {
+            "success": True,
+            "processed": len(entries),
+            "matched": 0,
+            "message": "No matching URLs found or all matches already have activities today"
+        }
+
+    # Create new activities for the matched entries
     new_activities = [
         UserActivity(
             user_id=user.id,
@@ -116,7 +147,6 @@ def process_url_visits(
             date=datetime.fromtimestamp(timestamp / 1000, tz=timezone.utc)
         )
         for contract_id, browser, timestamp in matched_entries
-        if contract_id not in existing_contract_ids
     ]
 
     # Bulk insert new activities if any
