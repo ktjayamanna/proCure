@@ -5,14 +5,14 @@ import ProtectedRoute from "@/components/auth/protected-route";
 import { Button } from "@/components/ui/button";
 import { useRouter } from "next/navigation";
 import { useState, useEffect, useMemo } from "react";
-import { getOrganizationName, getVendorUsage, VendorUsageData } from "@/lib/api/organization-api";
+import { getOrganizationName, getContractUsage, ContractUsageData } from "@/lib/api/organization-api";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 
 export default function UsagePage() {
   const { user } = useAuth();
   const router = useRouter();
   const [organization, setOrganization] = useState<{ domain_name: string; company_name?: string } | null>(null);
-  const [vendorUsage, setVendorUsage] = useState<VendorUsageData[]>([]);
+  const [contractUsage, setContractUsage] = useState<ContractUsageData[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [error, setError] = useState<string>("");
 
@@ -20,16 +20,16 @@ export default function UsagePage() {
   const [currentPage, setCurrentPage] = useState<number>(1);
   const [itemsPerPage, setItemsPerPage] = useState<number>(5);
 
-  // Calculate usage ratio for each vendor and sort by usage (least to most)
-  const sortedAndPaginatedVendors = useMemo(() => {
+  // Calculate usage ratio for each contract and sort by usage (least to most)
+  const sortedAndPaginatedContracts = useMemo(() => {
     // Add usage ratio and sort
-    const vendorsWithRatio = vendorUsage.map(vendor => ({
-      ...vendor,
-      usageRatio: vendor.active_users / vendor.total_seats
+    const contractsWithRatio = contractUsage.map(contract => ({
+      ...contract,
+      usageRatio: contract.active_users / contract.total_seats
     }));
 
     // Sort by usage ratio (least to most)
-    const sorted = [...vendorsWithRatio].sort((a, b) => a.usageRatio - b.usageRatio);
+    const sorted = [...contractsWithRatio].sort((a, b) => a.usageRatio - b.usageRatio);
 
     // Calculate total pages
     const totalPages = Math.ceil(sorted.length / itemsPerPage);
@@ -44,7 +44,7 @@ export default function UsagePage() {
       totalPages,
       totalItems: sorted.length
     };
-  }, [vendorUsage, currentPage, itemsPerPage]);
+  }, [contractUsage, currentPage, itemsPerPage]);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -57,9 +57,9 @@ export default function UsagePage() {
           const orgData = await getOrganizationName(user.organization_id);
           setOrganization(orgData);
 
-          // Fetch vendor usage data
-          const usageData = await getVendorUsage(user.organization_id);
-          setVendorUsage(usageData.vendors);
+          // Fetch contract usage data
+          const usageData = await getContractUsage(user.organization_id);
+          setContractUsage(usageData.contracts);
         } catch (err) {
           console.error("Error fetching data:", err);
           setError("Could not load data");
@@ -87,12 +87,12 @@ export default function UsagePage() {
           {/* Total Spend */}
           <div className="bg-card p-4 rounded-lg shadow-sm border">
             <div className="text-sm text-muted-foreground">Total Spend</div>
-            <div className="text-2xl font-bold mt-1">$280,500</div>
+            <div className="text-2xl font-bold mt-1">{new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(280500)}</div>
           </div>
 
-          {/* Number of Vendors */}
+          {/* Number of Contracts */}
           <div className="bg-card p-4 rounded-lg shadow-sm border">
-            <div className="text-sm text-muted-foreground"># of Vendors</div>
+            <div className="text-sm text-muted-foreground"># of Contracts</div>
             <div className="text-2xl font-bold mt-1">28</div>
           </div>
 
@@ -105,7 +105,7 @@ export default function UsagePage() {
           {/* Potential Savings */}
           <div className="bg-card p-4 rounded-lg shadow-sm border">
             <div className="text-sm text-muted-foreground">Potential Savings</div>
-            <div className="text-2xl font-bold mt-1">$41,200</div>
+            <div className="text-2xl font-bold mt-1">{new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(41200)}</div>
           </div>
         </div>
 
@@ -117,23 +117,23 @@ export default function UsagePage() {
             <div className="p-4 border border-dashed rounded-md bg-muted/50 flex flex-col items-center justify-center">
               <div className="grid grid-cols-1 gap-4 w-full max-w-md">
                 {isLoading ? (
-                  <div className="text-center py-4">Loading vendor data...</div>
+                  <div className="text-center py-4">Loading contract data...</div>
                 ) : error ? (
                   <div className="text-center py-4 text-destructive">{error}</div>
-                ) : vendorUsage.length === 0 ? (
-                  <div className="text-center py-4">No vendor data available</div>
+                ) : contractUsage.length === 0 ? (
+                  <div className="text-center py-4">No contract data available</div>
                 ) : (
                   <>
                     <div className="text-sm text-muted-foreground mb-2">
-                      Showing vendors sorted by usage ratio (least to most)
+                      Showing contracts sorted by usage ratio (least to most)
                     </div>
-                    {sortedAndPaginatedVendors.items.map((vendor, index) => {
-                      const usagePercentage = Math.round((vendor.active_users / vendor.total_seats) * 100);
+                    {sortedAndPaginatedContracts.items.map((contract, index) => {
+                      const usagePercentage = Math.round((contract.active_users / contract.total_seats) * 100);
                       return (
                         <div key={index} className="bg-background rounded p-3 flex flex-col">
                           <div className="flex justify-between items-start">
-                            <span className="font-medium">{vendor.vendor_name}</span>
-                            <span className="text-sm">{vendor.active_users} / {vendor.total_seats} users ({usagePercentage}%)</span>
+                            <span className="font-medium">{contract.vendor_name}</span>
+                            <span className="text-sm">{contract.active_users} / {contract.total_seats} users ({usagePercentage}%)</span>
                           </div>
                           <div className="w-full bg-muted h-2 rounded-full mt-2 overflow-hidden">
                             <div
@@ -146,7 +146,7 @@ export default function UsagePage() {
                     })}
 
                     {/* Pagination Controls */}
-                    {sortedAndPaginatedVendors.totalItems > 0 && (
+                    {sortedAndPaginatedContracts.totalItems > 0 && (
                       <div className="flex flex-col gap-2 mt-4">
                         <div className="flex justify-between items-center">
                           <div className="flex items-center gap-2">
@@ -167,7 +167,7 @@ export default function UsagePage() {
                           </div>
                         </div>
 
-                        {sortedAndPaginatedVendors.totalPages > 1 && (
+                        {sortedAndPaginatedContracts.totalPages > 1 && (
                           <div className="flex justify-between items-center">
                             <Button
                               variant="outline"
@@ -178,13 +178,13 @@ export default function UsagePage() {
                               <ChevronLeft className="h-4 w-4 mr-1" /> Previous
                             </Button>
                             <span className="text-sm">
-                              Page {currentPage} of {sortedAndPaginatedVendors.totalPages}
+                              Page {currentPage} of {sortedAndPaginatedContracts.totalPages}
                             </span>
                             <Button
                               variant="outline"
                               size="sm"
-                              onClick={() => setCurrentPage(prev => Math.min(prev + 1, sortedAndPaginatedVendors.totalPages))}
-                              disabled={currentPage === sortedAndPaginatedVendors.totalPages}
+                              onClick={() => setCurrentPage(prev => Math.min(prev + 1, sortedAndPaginatedContracts.totalPages))}
+                              disabled={currentPage === sortedAndPaginatedContracts.totalPages}
                             >
                               Next <ChevronRight className="h-4 w-4 ml-1" />
                             </Button>
@@ -194,7 +194,7 @@ export default function UsagePage() {
                     )}
 
                     <div className="text-sm text-muted-foreground text-center mt-2">
-                      Showing {sortedAndPaginatedVendors.items.length} of {sortedAndPaginatedVendors.totalItems} vendors
+                      Showing {sortedAndPaginatedContracts.items.length} of {sortedAndPaginatedContracts.totalItems} contracts
                     </div>
                   </>
                 )}

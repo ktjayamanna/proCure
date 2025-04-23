@@ -1,13 +1,13 @@
 """
-Pydantic schemas for vendor operations in the proCure application.
+Pydantic schemas for contract operations in the proCure application.
 """
 
 from typing import Optional
 from datetime import datetime
 from pydantic import BaseModel, Field
 
-class VendorContractRequest(BaseModel):
-    """Request model for adding a vendor contract."""
+class ContractRequest(BaseModel):
+    """Request model for adding a contract."""
     vendor_name: str = Field(..., description="The name of the vendor")
     product_url: str = Field(..., description="The URL of the vendor's product")
     organization_id: str = Field(..., description="The organization ID")
@@ -20,8 +20,8 @@ class VendorContractRequest(BaseModel):
     expire_at: Optional[datetime] = Field(None, description="Contract expiration date")
     created_at: Optional[datetime] = Field(None, description="Contract creation date")
 
-class VendorContractResponse(BaseModel):
-    """Response model for vendor contract operations."""
+class ContractResponse(BaseModel):
+    """Response model for contract operations."""
     success: bool = Field(..., description="Whether the operation was successful")
     contract_id: int = Field(..., description="The ID of the contract")
     vendor_name: str = Field(..., description="The name of the vendor")

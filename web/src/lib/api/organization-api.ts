@@ -8,16 +8,16 @@ export interface Organization {
   company_name?: string;  // Full company name (e.g., Example Corporation)
 }
 
-export interface VendorUsageData {
+export interface ContractUsageData {
   vendor_name: string;
   active_users: number;
   total_seats: number;
 }
 
-export interface VendorUsageResponse {
+export interface ContractUsageResponse {
   organization_id: string;
   company_name?: string;
-  vendors: VendorUsageData[];
+  contracts: ContractUsageData[];
 }
 
 /**
@@ -43,23 +43,23 @@ export const getOrganizationName = async (organizationId: string): Promise<Organ
 };
 
 /**
- * Get vendor usage statistics for an organization
+ * Get contract usage statistics for an organization
  * @param organizationId The organization ID to analyze
- * @returns Vendor usage statistics
+ * @returns Contract usage statistics
  */
-export const getVendorUsage = async (organizationId: string): Promise<VendorUsageResponse> => {
+export const getContractUsage = async (organizationId: string): Promise<ContractUsageResponse> => {
   try {
-    const response = await fetch(`${API_BASE_URL}/organizations/${organizationId}/vendor-usage`, {
+    const response = await fetch(`${API_BASE_URL}/organizations/${organizationId}/contract-usage`, {
       credentials: 'include' // Important for cookies
     });
 
     if (!response.ok) {
-      throw new Error(`Failed to get vendor usage: ${response.status}`);
+      throw new Error(`Failed to get contract usage: ${response.status}`);
     }
 
     return await response.json();
   } catch (error) {
-    console.error('Error fetching vendor usage:', error);
+    console.error('Error fetching contract usage:', error);
     throw error;
   }
 };

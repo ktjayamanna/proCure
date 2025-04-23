@@ -1,5 +1,5 @@
 """
-Vendor routes for the proCure application.
+Contract routes for the proCure application.
 """
 
 import logging
@@ -11,9 +11,9 @@ from datetime import datetime
 from procure.server.utils import normalize_url
 
 from procure.auth.users import authenticate_user_by_token
-from procure.server.vendor.schemas import VendorContractRequest, VendorContractResponse
+from procure.server.contract.schemas import ContractRequest, ContractResponse
 from procure.utils.db_utils import get_db
-from procure.db.models import Vendor
+from procure.db.models import Contract
 from procure.db import core as db_core
 from procure.configs.app_configs import API_PREFIX
 
@@ -21,16 +21,16 @@ from procure.configs.app_configs import API_PREFIX
 logger = logging.getLogger(__name__)
 
 # Create router
-router = APIRouter(prefix=API_PREFIX, tags=["vendor"])
+router = APIRouter(prefix=API_PREFIX, tags=["contract"])
 
-@router.post("/vendor/contract", response_model=VendorContractResponse)
-async def add_vendor_contract(
-    contract_data: VendorContractRequest,
+@router.post("/contract", response_model=ContractResponse)
+async def add_contract(
+    contract_data: ContractRequest,
     db: Session = Depends(get_db),
     email: str = Depends(authenticate_user_by_token)
 ):
     """
-    Add a vendor contract to the database.
+    Add a contract to the database.
 
     If a contract with the same organization_id and product_url already exists,
     the existing contract will be updated with the new data.
@@ -61,8 +61,8 @@ async def add_vendor_contract(
                 detail=str(url_error)
             )
 
-        # Create a new vendor record
-        new_vendor = Vendor(
+        # Create a new contract record
+        new_contract = Contract(
             vendor_name=contract_data.vendor_name,
             product_url=normalized_url,
             organization_id=contract_data.organization_id,
@@ -77,23 +77,23 @@ async def add_vendor_contract(
 
         # Set date fields if provided
         if contract_data.expire_at:
-            new_vendor.expire_at = contract_data.expire_at
+            new_contract.expire_at = contract_data.expire_at
 
         if contract_data.created_at:
-            new_vendor.created_at = contract_data.created_at
+            new_contract.created_at = contract_data.created_at
 
-        # Try to add the new vendor
-        db.add(new_vendor)
+        # Try to add the new contract
+        db.add(new_contract)
         db.flush()
         db.commit()
 
         # Return success response for new contract
-        return VendorContractResponse(
+        return ContractResponse(
             success=True,
-            contract_id=new_vendor.contract_id,
-            vendor_name=new_vendor.vendor_name,
+            contract_id=new_contract.contract_id,
+            vendor_name=new_contract.vendor_name,
             product_url=normalized_url,
-            message="Vendor contract created successfully",
+            message="Contract created successfully",
             created=True
         )
 
@@ -104,48 +104,48 @@ async def add_vendor_contract(
         # Check if the error is due to the unique constraint
         if "uq_org_product_url" in str(e):
             try:
-                # Find the existing vendor record
-                existing_vendor = db.query(Vendor).filter(
-                    Vendor.organization_id == contract_data.organization_id,
-                    Vendor.product_url == normalized_url
+                # Find the existing contract record
+                existing_contract = db.query(Contract).filter(
+                    Contract.organization_id == contract_data.organization_id,
+                    Contract.product_url == normalized_url
                 ).first()
 
-                if existing_vendor:
-                    # Update the existing vendor record
-                    existing_vendor.vendor_name = contract_data.vendor_name
-                    existing_vendor.annual_spend = contract_data.annual_spend
-                    existing_vendor.contract_type = contract_data.contract_type
-                    existing_vendor.contract_status = contract_data.contract_status
-                    existing_vendor.payment_type = contract_data.payment_type
-                    existing_vendor.num_seats = contract_data.num_seats
-                    existing_vendor.notes = contract_data.notes
-                    existing_vendor.owner_id = user.id  # Update the owner to the current user
+                if existing_contract:
+                    # Update the existing contract record
+                    existing_contract.vendor_name = contract_data.vendor_name
+                    existing_contract.annual_spend = contract_data.annual_spend
+                    existing_contract.contract_type = contract_data.contract_type
+                    existing_contract.contract_status = contract_data.contract_status
+                    existing_contract.payment_type = contract_data.payment_type
+                    existing_contract.num_seats = contract_data.num_seats
+                    existing_contract.notes = contract_data.notes
+                    existing_contract.owner_id = user.id  # Update the owner to the current user
 
                     # Update date fields if provided
                     if contract_data.expire_at:
-                        existing_vendor.expire_at = contract_data.expire_at
+                        existing_contract.expire_at = contract_data.expire_at
 
                     if contract_data.created_at:
-                        existing_vendor.created_at = contract_data.created_at
+                        existing_contract.created_at = contract_data.created_at
 
                     # Commit the changes
                     db.commit()
 
                     # Return success response for updated contract
-                    return VendorContractResponse(
+                    return ContractResponse(
                         success=True,
-                        contract_id=existing_vendor.contract_id,
-                        vendor_name=existing_vendor.vendor_name,
+                        contract_id=existing_contract.contract_id,
+                        vendor_name=existing_contract.vendor_name,
                         product_url=normalized_url,
-                        message="Vendor contract updated successfully",
+                        message="Contract updated successfully",
                         created=False
                     )
 
             except SQLAlchemyError as update_error:
-                logger.error(f"Error updating existing vendor: {str(update_error)}")
+                logger.error(f"Error updating existing contract: {str(update_error)}")
                 raise HTTPException(
                     status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                    detail=f"Database error updating vendor: {str(update_error)}"
+                    detail=f"Database error updating contract: {str(update_error)}"
                 )
 
         # If we get here, it's another type of integrity error
@@ -160,12 +160,12 @@ async def add_vendor_contract(
         db.rollback()
 
         # Log the error and return a 500 response
-        logger.error(f"Database error adding vendor contract: {str(e)}")
+        logger.error(f"Database error adding contract: {str(e)}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Database error: {str(e)}"
         )
 
-def register_vendor_routes(app):
-    """Register vendor routes with the main FastAPI app"""
+def register_contract_routes(app):
+    """Register contract routes with the main FastAPI app"""
     app.include_router(router)

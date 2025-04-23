@@ -1,12 +1,12 @@
-// Vendor API service
+// Contract API service
 import { API_BASE_URL } from '../config';
 
 // Types
-export interface VendorContract {
+export interface Contract {
   vendor_name: string;
   product_url: string;
   organization_id: string;
-  annual_spend?: number;
+  annual_spend: number; // Stored as Numeric(10,2) in the database - use 2 decimal places
   contract_type?: string;
   contract_status?: string;
   payment_type?: string;
@@ -16,7 +16,7 @@ export interface VendorContract {
   created_at?: string; // ISO date string format
 }
 
-export interface VendorContractResponse {
+export interface ContractResponse {
   success: boolean;
   contract_id: number;
   vendor_name: string;
@@ -26,13 +26,13 @@ export interface VendorContractResponse {
 }
 
 /**
- * Add a vendor contract
+ * Add a contract
  * @param contractData The contract data to add
  * @returns Response with contract ID and status
  */
-export const addVendorContract = async (contractData: VendorContract): Promise<VendorContractResponse> => {
+export const addContract = async (contractData: Contract): Promise<ContractResponse> => {
   try {
-    const response = await fetch(`${API_BASE_URL}/vendor/contract`, {
+    const response = await fetch(`${API_BASE_URL}/contract`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'
@@ -43,12 +43,12 @@ export const addVendorContract = async (contractData: VendorContract): Promise<V
 
     if (!response.ok) {
       const errorData = await response.json();
-      throw new Error(errorData.detail || `Failed to add vendor contract: ${response.status}`);
+      throw new Error(errorData.detail || `Failed to add contract: ${response.status}`);
     }
 
     return await response.json();
   } catch (error) {
-    console.error('Error adding vendor contract:', error);
+    console.error('Error adding contract:', error);
     throw error;
   }
 };

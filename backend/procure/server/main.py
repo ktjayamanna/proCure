@@ -9,7 +9,7 @@ from procure.server.health.routes import register_health_routes
 from procure.server.url_visits.routes import register_url_visits_routes
 from procure.server.manage.routes import register_manage_routes
 from procure.server.analytics.routes import register_analytics_routes
-from procure.server.vendor.routes import register_vendor_routes
+from procure.server.contract.routes import register_contract_routes
 from procure.auth.routes import register_auth_routes
 
 app = FastAPI(title="proCure Backend", version="1.0.0")
@@ -53,5 +53,5 @@ register_manage_routes(app)
 # Register analytics routes
 register_analytics_routes(app)
 
-# Register vendor routes
-register_vendor_routes(app)
+# Register contract routes
+register_contract_routes(app)

@@ -3,7 +3,7 @@ from sqlalchemy.orm import Session
 from datetime import datetime, timezone
 from typing import List, Dict, Any, Optional, Tuple
 
-from procure.db.models import Vendor, Organization, User, UserActivity
+from procure.db.models import Contract, Organization, User, UserActivity
 
 # Database operations for core functionality
 
@@ -17,9 +17,9 @@ def get_organization_by_id(db: Session, organization_id: str) -> Optional[Organi
     stmt = select(Organization).where(Organization.organization_id == organization_id)
     return db.scalars(stmt).one_or_none()
 
-def get_vendor_by_url(db: Session, url: str) -> Optional[Vendor]:
-    """Get a vendor by URL."""
-    stmt = select(Vendor).where(Vendor.product_url == url)
+def get_contract_by_url(db: Session, url: str) -> Optional[Contract]:
+    """Get a contract by URL."""
+    stmt = select(Contract).where(Contract.product_url == url)
     return db.scalars(stmt).one_or_none()
 
 def process_url_visits(
@@ -31,7 +31,7 @@ def process_url_visits(
 
     This function performs most operations at the database level for efficiency:
     1. Finds the user by email
-    2. Identifies which URLs in the entries match vendor URLs
+    2. Identifies which URLs in the entries match contract URLs
     3. Checks which matched URLs don't already have activities for today
     4. Creates new activities for those URLs
     """
@@ -57,22 +57,22 @@ def process_url_visits(
     # Get today's date for activity filtering
     today = datetime.now(timezone.utc).date()
 
-    # Find matches between entry URLs and vendor URLs directly in the database
-    # This is done by checking if any vendor URL is contained within the entry URL
+    # Find matches between entry URLs and contract URLs directly in the database
+    # This is done by checking if any contract URL is contained within the entry URL
     matched_entries: List[Tuple[int, str, int]] = []  # (contract_id, browser, timestamp)
 
-    # Get all vendor URLs and their contract_ids
-    vendor_stmt = select(Vendor.contract_id, Vendor.product_url).where(
-        Vendor.organization_id == user.organization_id
+    # Get all contract URLs and their contract_ids
+    contract_stmt = select(Contract.contract_id, Contract.product_url).where(
+        Contract.organization_id == user.organization_id
     )
-    vendor_data = [(row[0], row[1]) for row in db.execute(vendor_stmt)]
+    contract_data = [(row[0], row[1]) for row in db.execute(contract_stmt)]
 
-    # Match entry URLs with vendor URLs
+    # Match entry URLs with contract URLs
     # This part still needs Python processing as SQL LIKE/CONTAINS would need
     # a different approach for substring matching in this direction
     for entry_url, browser, timestamp in entry_urls:
-        for contract_id, vendor_url in vendor_data:
-            if vendor_url in entry_url:  # Check if vendor URL is in entry URL
+        for contract_id, contract_url in contract_data:
+            if contract_url in entry_url:  # Check if contract URL is in entry URL
                 matched_entries.append((contract_id, browser, timestamp))
                 break  # Found a match, move to next entry
 

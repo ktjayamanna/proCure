@@ -21,120 +21,129 @@ INSERT INTO users (id, email, hashed_password, is_active, is_superuser, is_verif
 ('e6000000-0000-0000-0000-000000000006', 'ceo@startup.io', '$2b$12$EixZaYVK1fsbw1ZfbX3OXePaWxn96p36WQoeG6Lruj3vjPGga31lW', true, true, true, NOW(), 'org_efghijklmnopqrstuvwxyz1234567890', 'admin')
 ON CONFLICT (email) DO NOTHING;
 
--- Add vendor entries for test employees
-INSERT INTO vendor (vendor_name, product_url, owner_id, created_at, organization_id, num_seats)
+-- Add contract entries for test employees
+INSERT INTO contracts (vendor_name, product_url, owner_id, created_at, organization_id, num_seats, annual_spend)
 SELECT
     'Google Workspace',
     'https://mail.google.com',
     id,
     NOW(),
     'org_abcdefghijklmnopqrstuvwxyz123456',
-    50
+    50,
+    1200.00
 FROM users
 WHERE email = 'gcahill@firebaystudios.com'
 ON CONFLICT DO NOTHING;
 
-INSERT INTO vendor (vendor_name, product_url, owner_id, created_at, organization_id, num_seats)
+INSERT INTO contracts (vendor_name, product_url, owner_id, created_at, organization_id, num_seats, annual_spend)
 SELECT
     'ChatGPT',
     'https://chatgpt.com',
     id,
     NOW(),
     'org_abcdefghijklmnopqrstuvwxyz123456',
-    25
+    25,
+    2400.00
 FROM users
 WHERE email = 'gcahill@firebaystudios.com'
 ON CONFLICT DO NOTHING;
 
-INSERT INTO vendor (vendor_name, product_url, owner_id, created_at, organization_id, num_seats)
+INSERT INTO contracts (vendor_name, product_url, owner_id, created_at, organization_id, num_seats, annual_spend)
 SELECT
     'Slack',
     'https://app.slack.com',
     id,
     NOW(),
     'org_bcdefghijklmnopqrstuvwxyz1234567',
-    20
+    20,
+    1800.00
 FROM users
 WHERE email = 'test2@example.com'
 ON CONFLICT DO NOTHING;
 
-INSERT INTO vendor (vendor_name, product_url, owner_id, created_at, organization_id, num_seats)
+INSERT INTO contracts (vendor_name, product_url, owner_id, created_at, organization_id, num_seats, annual_spend)
 SELECT
     'GitHub',
     'https://github.com',
     id,
     NOW(),
     'org_cdefghijklmnopqrstuvwxyz12345678',
-    10
+    10,
+    3600.00
 FROM users
 WHERE email = 'test3@example.com'
 ON CONFLICT DO NOTHING;
 
-INSERT INTO vendor (vendor_name, product_url, owner_id, created_at, organization_id, num_seats)
+INSERT INTO contracts (vendor_name, product_url, owner_id, created_at, organization_id, num_seats, annual_spend)
 SELECT
     'Trello',
     'https://trello.com',
     id,
     NOW(),
     'org_cdefghijklmnopqrstuvwxyz12345678',
-    5
+    5,
+    600.00
 FROM users
 WHERE email = 'test3@example.com'
 ON CONFLICT DO NOTHING;
 
-INSERT INTO vendor (vendor_name, product_url, owner_id, created_at, organization_id, num_seats)
+INSERT INTO contracts (vendor_name, product_url, owner_id, created_at, organization_id, num_seats, annual_spend)
 SELECT
     'Zoom',
     'https://zoom.us',
     id,
     NOW(),
     'org_cdefghijklmnopqrstuvwxyz12345678',
-    15
+    15,
+    1500.00
 FROM users
 WHERE email = 'test3@example.com'
 ON CONFLICT DO NOTHING;
 
--- Add vendor entries for acme.com employees
-INSERT INTO vendor (vendor_name, product_url, owner_id, created_at, organization_id, num_seats)
+-- Add contract entries for acme.com employees
+INSERT INTO contracts (vendor_name, product_url, owner_id, created_at, organization_id, num_seats, annual_spend)
 SELECT
     'Salesforce',
     'https://salesforce.com',
     id,
     NOW(),
     'org_defghijklmnopqrstuvwxyz123456789',
-    25
+    25,
+    9600.00
 FROM users
 WHERE email = 'admin@acme.com'
 ON CONFLICT DO NOTHING;
 
-INSERT INTO vendor (vendor_name, product_url, owner_id, created_at, organization_id, num_seats)
+INSERT INTO contracts (vendor_name, product_url, owner_id, created_at, organization_id, num_seats, annual_spend)
 SELECT
     'Jira',
     'https://jira.atlassian.com',
     id,
     NOW(),
     'org_defghijklmnopqrstuvwxyz123456789',
-    30
+    30,
+    7200.00
 FROM users
 WHERE email = 'member@acme.com'
 ON CONFLICT DO NOTHING;
 
--- Add vendor entry for startup.io employee
-INSERT INTO vendor (vendor_name, product_url, owner_id, created_at, organization_id, num_seats)
+-- Add contract entry for startup.io employee
+INSERT INTO contracts (vendor_name, product_url, owner_id, created_at, organization_id, num_seats, annual_spend)
 SELECT
     'Notion',
     'https://notion.so',
     id,
     NOW(),
     'org_efghijklmnopqrstuvwxyz1234567890',
-    3
+    3,
+    480.00
 FROM users
 WHERE email = 'ceo@startup.io'
 ON CONFLICT DO NOTHING;
 
 -- Query to verify the data
-SELECT u.email, o.company_name, o.domain_name, v.vendor_name, v.product_url, v.num_seats
+SELECT u.email, o.company_name, o.domain_name, c.vendor_name, c.product_url, c.num_seats, c.annual_spend
 FROM users u
 JOIN organizations o ON u.organization_id = o.organization_id
-JOIN vendor v ON u.id = v.owner_id
-ORDER BY u.email, v.vendor_name;
+JOIN contracts c ON u.id = c.owner_id
+ORDER BY u.email, c.vendor_name;

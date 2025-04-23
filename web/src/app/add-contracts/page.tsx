@@ -13,17 +13,17 @@ import Papa from "papaparse";
 import * as XLSX from "xlsx";
 import { HelpCircle, InfoIcon } from "lucide-react";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
-import { addVendorContract, VendorContract } from "@/lib/api/vendor-api";
+import { addContract, Contract } from "@/lib/api/contract-api";
 
 // Define the required and optional fields for contracts
 const REQUIRED_FIELDS = [
   { id: "vendor_name", label: "Vendor Name" },
   { id: "product_url", label: "Product URL" },
   { id: "number_of_seats", label: "Number of Seats" },
+  { id: "annual_spend", label: "Annual Spend" },
 ];
 
 const OPTIONAL_FIELDS = [
-  { id: "annual_spend", label: "Annual Spend" },
   { id: "contract_type", label: "Contract Type" },
   { id: "contract_status", label: "Contract Status" },
   { id: "payment_type", label: "Payment Type" },
@@ -210,12 +210,12 @@ export default function AddContractsPage() {
       for (const contract of processedData) {
         try {
           // Convert the processed data to the format expected by the API
-          const contractData: VendorContract = {
+          const contractData: Contract = {
             vendor_name: contract.vendor_name,
             product_url: contract.product_url,
             organization_id: user.organization_id,
             num_seats: parseInt(contract.number_of_seats) || 1,
-            annual_spend: contract.annual_spend ? parseFloat(contract.annual_spend) : undefined,
+            annual_spend: parseFloat(parseFloat(contract.annual_spend || "0").toFixed(2)),
             contract_type: contract.contract_type,
             contract_status: contract.contract_status,
             payment_type: contract.payment_type,
@@ -248,7 +248,7 @@ export default function AddContractsPage() {
           }
 
           // Call the API to add the contract
-          const result = await addVendorContract(contractData);
+          const result = await addContract(contractData);
 
           if (result.success) {
             successCount++;
@@ -368,6 +368,7 @@ export default function AddContractsPage() {
                               </ul>
                             </li>
                             <li><span className="font-medium">Number of Seats:</span> Number of licenses/seats</li>
+                            <li><span className="font-medium">Annual Spend:</span> Annual cost of the contract in dollars (e.g., 1000.00)</li>
                           </ul>
                         </div>
 
@@ -378,7 +379,7 @@ export default function AddContractsPage() {
                             <li><span className="font-medium">Expire At:</span> Contract expiration date</li>
                             <li><span className="font-medium">Created At:</span> Contract creation date</li>
                             <li><span className="font-medium">Notes:</span> Additional information about the contract</li>
-                            <li><span className="font-medium">Annual Spend:</span> Annual cost of the contract</li>
+
                             <li>
                               <span className="font-medium">Contract Type:</span> Type of contract
                               <ul className="list-disc pl-5 mt-1">
@@ -520,13 +521,14 @@ export default function AddContractsPage() {
                             </ul>
                           </li>
                           <li><span className="font-medium">Number of Seats:</span> Number of licenses</li>
+                          <li><span className="font-medium">Annual Spend:</span> Annual cost of the contract in dollars (e.g., 1000.00)</li>
                         </ul>
                       </div>
 
                       <div>
                         <h3 className="font-medium mb-2">Optional Fields</h3>
                         <ul className="list-disc pl-5 space-y-2">
-                        <li><span className="font-medium">Annual Spend:</span> Annual cost of the contract</li>
+
                           <li>
                             <span className="font-medium">Contract Type:</span> Type of contract
                             <ul className="list-disc pl-5 mt-1">
