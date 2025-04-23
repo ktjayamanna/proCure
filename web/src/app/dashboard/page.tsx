@@ -6,6 +6,14 @@ import { Button } from "@/components/ui/button";
 import { useRouter } from "next/navigation";
 import { useState, useEffect } from "react";
 import { getOrganizationName } from "@/lib/api/organization-api";
+import { Settings } from "lucide-react";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 
 export default function DashboardPage() {
   const { user, onLogout } = useAuth();
@@ -44,33 +52,53 @@ export default function DashboardPage() {
       <div className="container mx-auto py-10 max-w-4xl">
         <div className="flex justify-between items-center mb-8">
           <h1 className="text-3xl font-bold">Dashboard</h1>
-          <Button variant="outline" onClick={handleLogout}>
-            Sign out
-          </Button>
+          <Dialog>
+            <DialogTrigger asChild>
+              <Button variant="ghost" size="icon" className="rounded-full">
+                <Settings className="h-5 w-5" />
+                <span className="sr-only">Settings</span>
+              </Button>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Account Information</DialogTitle>
+              </DialogHeader>
+              <div className="mt-4 space-y-3">
+                <div>
+                  <p className="text-sm font-medium text-muted-foreground">Email</p>
+                  <p>{user?.email}</p>
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-muted-foreground">Role</p>
+                  <p>{user?.role || "Member"}</p>
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-muted-foreground">Organization</p>
+                  <p>
+                    {isLoading ? (
+                      <span className="text-muted-foreground italic">Loading...</span>
+                    ) : error ? (
+                      <span className="text-destructive">{error}</span>
+                    ) : organization ? (
+                      <span>{organization.company_name || organization.domain_name}</span>
+                    ) : (
+                      <span className="text-muted-foreground">Not assigned</span>
+                    )}
+                  </p>
+                </div>
+                <div className="pt-4 border-t">
+                  <Button variant="destructive" onClick={handleLogout} className="w-full">
+                    Sign out
+                  </Button>
+                </div>
+              </div>
+            </DialogContent>
+          </Dialog>
         </div>
 
         <div className="bg-card p-6 rounded-lg shadow-sm">
           <h2 className="text-xl font-semibold mb-4">Welcome, {user?.email}</h2>
           <div className="grid gap-4">
-            <div className="p-4 border rounded-md">
-              <h3 className="font-medium">Account Information</h3>
-              <div className="mt-2 text-sm text-muted-foreground">
-                <p>Email: {user?.email}</p>
-                <p>Role: {user?.role || "Member"}</p>
-                <p>
-                  Organization: {isLoading ? (
-                    <span className="text-muted-foreground italic">Loading...</span>
-                  ) : error ? (
-                    <span className="text-destructive">{error}</span>
-                  ) : organization ? (
-                    <span>{organization.company_name || organization.domain_name}</span>
-                  ) : (
-                    <span className="text-muted-foreground">Not assigned</span>
-                  )}
-                </p>
-              </div>
-            </div>
-
             {user?.role === "admin" ? (
               <div className="p-4 border rounded-md">
                 <h3 className="font-medium mb-4">Quick Actions</h3>
