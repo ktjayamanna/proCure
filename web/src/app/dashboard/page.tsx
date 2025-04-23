@@ -91,11 +91,8 @@ export default function DashboardPage() {
               </div>
             ) : (
               <div className="p-4 border rounded-md">
-                <h3 className="text-lg font-semibold mb-4">Next Steps</h3>
+                <h3 className="text-lg font-semibold mb-4">How to get started</h3>
                 <ol className="list-decimal list-inside space-y-4">
-                  <li className="text-base text-muted-foreground leading-relaxed">
-                    Close this tab
-                  </li>
                   <li className="text-base text-muted-foreground leading-relaxed">
                     <span>Download the proCure Chrome extension: </span>
                     <a
