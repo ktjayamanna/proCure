@@ -26,5 +26,6 @@ class ContractResponse(BaseModel):
     contract_id: int = Field(..., description="The ID of the contract")
     vendor_name: str = Field(..., description="The name of the vendor")
     product_url: str = Field(..., description="The normalized URL of the vendor's product")
+    vendor_domain: Optional[str] = Field(None, description="The base domain of the vendor's product URL")
     message: str = Field(..., description="A message describing the result of the operation")
     created: bool = Field(..., description="Whether a new contract was created or an existing one was updated")

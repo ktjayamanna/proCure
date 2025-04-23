@@ -8,7 +8,7 @@ from sqlalchemy.orm import Session
 from sqlalchemy.exc import SQLAlchemyError, IntegrityError
 from datetime import datetime
 
-from procure.server.utils import normalize_url
+from procure.server.utils import normalize_url, get_base_domain
 
 from procure.auth.users import authenticate_user_by_token
 from procure.server.contract.schemas import ContractRequest, ContractResponse
@@ -61,10 +61,14 @@ async def add_contract(
                 detail=str(url_error)
             )
 
+        # Extract the vendor domain from the normalized URL
+        vendor_domain = get_base_domain(normalized_url)
+
         # Create a new contract record
         new_contract = Contract(
             vendor_name=contract_data.vendor_name,
             product_url=normalized_url,
+            vendor_domain=vendor_domain,
             organization_id=contract_data.organization_id,
             owner_id=user.id,
             annual_spend=contract_data.annual_spend,
@@ -93,6 +97,7 @@ async def add_contract(
             contract_id=new_contract.contract_id,
             vendor_name=new_contract.vendor_name,
             product_url=normalized_url,
+            vendor_domain=vendor_domain,
             message="Contract created successfully",
             created=True
         )
@@ -111,8 +116,12 @@ async def add_contract(
                 ).first()
 
                 if existing_contract:
+                    # Extract the vendor domain from the normalized URL
+                    vendor_domain = get_base_domain(normalized_url)
+
                     # Update the existing contract record
                     existing_contract.vendor_name = contract_data.vendor_name
+                    existing_contract.vendor_domain = vendor_domain
                     existing_contract.annual_spend = contract_data.annual_spend
                     existing_contract.contract_type = contract_data.contract_type
                     existing_contract.contract_status = contract_data.contract_status
@@ -137,6 +146,7 @@ async def add_contract(
                         contract_id=existing_contract.contract_id,
                         vendor_name=existing_contract.vendor_name,
                         product_url=normalized_url,
+                        vendor_domain=vendor_domain,
                         message="Contract updated successfully",
                         created=False
                     )

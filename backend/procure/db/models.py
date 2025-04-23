@@ -85,6 +85,7 @@ class Contract(Base):
     contract_id     = Column(Integer, primary_key=True)
     vendor_name     = Column(String(255), nullable=False)
     product_url      = Column(String(2083), nullable=False)
+    vendor_domain   = Column(String(255), nullable=False, comment="Base domain of the product URL (e.g., example.com)")
     created_at      = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
     expire_at       = Column(DateTime(timezone=True), nullable=True)
     owner_id        = Column(String(36), ForeignKey("users.id"), nullable=True)
