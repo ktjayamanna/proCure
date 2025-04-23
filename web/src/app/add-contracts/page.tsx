@@ -63,6 +63,7 @@ export default function AddContractsPage() {
   const [mappings, setMappings] = useState<Record<string, string>>({});
   const [isProcessing, setIsProcessing] = useState(false);
   const [fileData, setFileData] = useState<any[]>([]);
+  const [useAIForProductUrl, setUseAIForProductUrl] = useState(false);
   // Field info is now shown in a Sheet modal instead of a collapsible section
 
   // Handle file selection
@@ -156,9 +157,15 @@ export default function AddContractsPage() {
 
   // Process the mapped data
   const processData = useCallback(async () => {
-    // Check if all required fields are mapped
+    // Check if all required fields are mapped, with special handling for product_url when AI is enabled
     const missingRequiredFields = REQUIRED_FIELDS.filter(
-      (field) => !mappings[field.id]
+      (field) => {
+        // Skip product_url validation if AI is enabled
+        if (field.id === "product_url" && useAIForProductUrl) {
+          return false;
+        }
+        return !mappings[field.id];
+      }
     );
 
     if (missingRequiredFields.length > 0) {
@@ -212,7 +219,11 @@ export default function AddContractsPage() {
           // Convert the processed data to the format expected by the API
           const contractData: Contract = {
             vendor_name: contract.vendor_name,
-            product_url: contract.product_url,
+            // Use placeholder URL if AI option is selected, otherwise use the mapped value
+            // Create a unique URL with random number and vendor name to avoid unique constraint violations
+            product_url: useAIForProductUrl ?
+              `https://${Math.floor(Math.random() * 10000)}.${contract.vendor_name.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '')}.com` :
+              contract.product_url,
             organization_id: user.organization_id,
             num_seats: parseInt(contract.number_of_seats) || 1,
             annual_spend: parseFloat(parseFloat(contract.annual_spend || "0").toFixed(2)),
@@ -284,7 +295,7 @@ export default function AddContractsPage() {
         fileInputRef.current.value = "";
       }
     }
-  }, [fileData, mappings, user?.organization_id]);
+  }, [fileData, mappings, user?.organization_id, useAIForProductUrl]);
 
   // Reset the form
   const resetForm = () => {
@@ -292,6 +303,7 @@ export default function AddContractsPage() {
     setHeaders([]);
     setMappings({});
     setFileData([]);
+    setUseAIForProductUrl(false);
     if (fileInputRef.current) {
       fileInputRef.current.value = "";
     }
@@ -420,14 +432,31 @@ export default function AddContractsPage() {
                     <div className="grid gap-4 sm:grid-cols-2">
                       {REQUIRED_FIELDS.map((field) => (
                         <div key={field.id} className="space-y-2">
-                          <Label htmlFor={`mapping-${field.id}`}>
-                            {field.label} <span className="text-destructive">*</span>
-                          </Label>
+                          <div className="flex justify-between items-center">
+                            <Label htmlFor={`mapping-${field.id}`}>
+                              {field.label} <span className="text-destructive">*</span>
+                            </Label>
+                            {field.id === "product_url" && (
+                              <div className="flex items-center space-x-2">
+                                <input
+                                  type="checkbox"
+                                  id="use-ai-for-product-url"
+                                  checked={useAIForProductUrl}
+                                  onChange={(e) => setUseAIForProductUrl(e.target.checked)}
+                                  className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
+                                />
+                                <Label htmlFor="use-ai-for-product-url" className="text-sm font-normal">
+                                  Populate with AI
+                                </Label>
+                              </div>
+                            )}
+                          </div>
                           <select
                             id={`mapping-${field.id}`}
-                            className="w-full h-9 rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-xs transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
+                            className={`w-full h-9 rounded-md border border-input px-3 py-1 text-sm shadow-xs transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring ${field.id === "product_url" && useAIForProductUrl ? "bg-gray-100 text-gray-500" : "bg-transparent"}`}
                             value={mappings[field.id] || ""}
                             onChange={(e) => updateMapping(field.id, e.target.value)}
+                            disabled={field.id === "product_url" && useAIForProductUrl}
                           >
                             <option value="">Select a column</option>
                             {headers.map((header) => (
@@ -436,6 +465,9 @@ export default function AddContractsPage() {
                               </option>
                             ))}
                           </select>
+                          {field.id === "product_url" && useAIForProductUrl && (
+                            <p className="text-xs text-muted-foreground">Using unique vendor-based placeholder URLs</p>
+                          )}
                         </div>
                       ))}
                     </div>
