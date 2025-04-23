@@ -20,8 +20,8 @@ export default function UsagePage() {
   const [currentPage, setCurrentPage] = useState<number>(1);
   const [itemsPerPage, setItemsPerPage] = useState<number>(5);
 
-  // Calculate usage ratio for each contract and sort by usage (least to most)
-  const sortedAndPaginatedContracts = useMemo(() => {
+  // Calculate usage metrics from contract data
+  const { sortedAndPaginatedContracts, usageMetrics } = useMemo(() => {
     // Add usage ratio and sort
     const contractsWithRatio = contractUsage.map(contract => ({
       ...contract,
@@ -39,10 +39,40 @@ export default function UsagePage() {
     const endIndex = startIndex + itemsPerPage;
     const paginatedItems = sorted.slice(startIndex, endIndex);
 
+    // Calculate usage metrics
+    const totalSpend = contractUsage.reduce((sum, contract) => {
+      return sum + contract.annual_spend;
+    }, 0);
+
+    const contractCount = contractUsage.length;
+
+    // Calculate average usage percentage across all contracts
+    const averageUsagePercentage = contractCount > 0
+      ? contractsWithRatio.reduce((sum, contract) => sum + (contract.usageRatio * 100), 0) / contractCount
+      : 0;
+
+    // Calculate underutilized percentage as 100 - average usage
+    const underutilizedPercentage = Math.round(100 - averageUsagePercentage);
+
+    // Calculate potential savings using the formula: sum(total spending per contract * (1-usage ratio) per contract)
+    const potentialSavings = contractsWithRatio.reduce((sum, contract) => {
+      // Cap usage ratio at 1.0 to avoid negative savings
+      const cappedUsageRatio = Math.min(contract.usageRatio, 1.0);
+      return sum + (contract.annual_spend * (1 - cappedUsageRatio));
+    }, 0);
+
     return {
-      items: paginatedItems,
-      totalPages,
-      totalItems: sorted.length
+      sortedAndPaginatedContracts: {
+        items: paginatedItems,
+        totalPages,
+        totalItems: sorted.length
+      },
+      usageMetrics: {
+        total_spend: totalSpend,
+        contract_count: contractCount,
+        underutilized_percentage: underutilizedPercentage,
+        potential_savings: potentialSavings
+      }
     };
   }, [contractUsage, currentPage, itemsPerPage]);
 
@@ -87,25 +117,57 @@ export default function UsagePage() {
           {/* Total Spend */}
           <div className="bg-card p-4 rounded-lg shadow-sm border">
             <div className="text-sm text-muted-foreground">Total Spend</div>
-            <div className="text-2xl font-bold mt-1">{new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(280500)}</div>
+            <div className="text-2xl font-bold mt-1">
+              {isLoading ? (
+                <span className="text-muted-foreground text-lg">Loading...</span>
+              ) : usageMetrics ? (
+                new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(usageMetrics.total_spend)
+              ) : (
+                <span className="text-muted-foreground text-lg">N/A</span>
+              )}
+            </div>
           </div>
 
           {/* Number of Contracts */}
           <div className="bg-card p-4 rounded-lg shadow-sm border">
             <div className="text-sm text-muted-foreground"># of Contracts</div>
-            <div className="text-2xl font-bold mt-1">28</div>
+            <div className="text-2xl font-bold mt-1">
+              {isLoading ? (
+                <span className="text-muted-foreground text-lg">Loading...</span>
+              ) : usageMetrics ? (
+                usageMetrics.contract_count
+              ) : (
+                <span className="text-muted-foreground text-lg">N/A</span>
+              )}
+            </div>
           </div>
 
           {/* Percentage Underutilized */}
           <div className="bg-card p-4 rounded-lg shadow-sm border">
             <div className="text-sm text-muted-foreground">% Underutilized</div>
-            <div className="text-2xl font-bold mt-1">18%</div>
+            <div className="text-2xl font-bold mt-1">
+              {isLoading ? (
+                <span className="text-muted-foreground text-lg">Loading...</span>
+              ) : usageMetrics ? (
+                `${usageMetrics.underutilized_percentage}%`
+              ) : (
+                <span className="text-muted-foreground text-lg">N/A</span>
+              )}
+            </div>
           </div>
 
           {/* Potential Savings */}
           <div className="bg-card p-4 rounded-lg shadow-sm border">
             <div className="text-sm text-muted-foreground">Potential Savings</div>
-            <div className="text-2xl font-bold mt-1">{new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(41200)}</div>
+            <div className="text-2xl font-bold mt-1">
+              {isLoading ? (
+                <span className="text-muted-foreground text-lg">Loading...</span>
+              ) : usageMetrics ? (
+                new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(usageMetrics.potential_savings)
+              ) : (
+                <span className="text-muted-foreground text-lg">N/A</span>
+              )}
+            </div>
           </div>
         </div>
 

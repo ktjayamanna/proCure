@@ -3,7 +3,7 @@ Analytics functions for the proCure application.
 """
 
 import logging
-from sqlalchemy import select, func, and_, extract
+from sqlalchemy import select, func, and_, extract, case
 from sqlalchemy.orm import Session
 from datetime import datetime
 from typing import Dict, Any, List
@@ -86,7 +86,8 @@ def get_contract_usage_by_org_id(db: Session, organization_id: str) -> Dict[str,
         contract_usage_data.append({
             "vendor_name": contract.vendor_name,
             "active_users": active_users_count,
-            "total_seats": total_seats
+            "total_seats": total_seats,
+            "annual_spend": float(contract.annual_spend or 0)
             # No usage_ratio - frontend will handle formatting
         })
 
@@ -101,3 +102,4 @@ def get_contract_usage_by_org_id(db: Session, organization_id: str) -> Dict[str,
         },
         "contracts": contract_usage_data
     }
+

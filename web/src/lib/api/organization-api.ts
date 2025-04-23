@@ -12,6 +12,7 @@ export interface ContractUsageData {
   vendor_name: string;
   active_users: number;
   total_seats: number;
+  annual_spend: number;
 }
 
 export interface ContractUsageResponse {
@@ -19,6 +20,8 @@ export interface ContractUsageResponse {
   company_name?: string;
   contracts: ContractUsageData[];
 }
+
+
 
 /**
  * Get organization name by ID
@@ -63,3 +66,5 @@ export const getContractUsage = async (organizationId: string): Promise<Contract
     throw error;
   }
 };
+
+

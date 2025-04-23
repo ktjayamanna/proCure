@@ -10,9 +10,11 @@ class ContractUsageData(BaseModel):
     vendor_name: str = Field(..., description="The name of the SaaS vendor")
     active_users: int = Field(..., description="Number of active users this month")
     total_seats: int = Field(..., description="Total number of seats purchased")
+    annual_spend: float = Field(0.0, description="Annual spend on this contract in USD")
 
 class ContractUsageResponse(BaseModel):
     """Response model for contract usage endpoint."""
     organization_id: str = Field(..., description="The organization ID")
     company_name: str | None = Field(None, description="The company name")
     contracts: List[ContractUsageData] = Field(default_factory=list, description="List of contract usage data")
+
