@@ -4,6 +4,7 @@ from datetime import datetime, timezone
 from typing import List, Dict, Any, Optional, Tuple
 
 from procure.db.models import Contract, Organization, User, UserActivity
+from procure.server.utils import get_base_domain
 
 # Database operations for core functionality
 
@@ -31,9 +32,10 @@ def process_url_visits(
 
     This function performs most operations at the database level for efficiency:
     1. Finds the user by email
-    2. Identifies which URLs in the entries match contract URLs
-    3. Checks which matched URLs don't already have activities for today
-    4. Creates new activities for those URLs
+    2. Extracts base domains from entry URLs using tldextract
+    3. Matches entry domains with vendor domains in contracts
+    4. Checks which matched URLs don't already have activities for today
+    5. Creates new activities for those URLs
     """
     # Get user
     user = get_user_by_email(db, email)
@@ -44,35 +46,44 @@ def process_url_visits(
             "status_code": 404
         }
 
-    # Extract URLs from entries with their metadata
-    entry_urls = [(entry["url"], entry["browser"], entry["timestamp"]) for entry in entries]
-    if not entry_urls:
+    # Extract URLs from entries with their metadata and get their base domains
+    entry_data = []
+    for entry in entries:
+        url = entry["url"]
+        browser = entry["browser"]
+        timestamp = entry["timestamp"]
+        try:
+            # Extract the base domain from the URL
+            base_domain = get_base_domain(url)
+            entry_data.append((url, base_domain, browser, timestamp))
+        except Exception as e:
+            # Skip invalid URLs
+            continue
+
+    if not entry_data:
         return {
             "success": True,
-            "processed": 0,
+            "processed": len(entries),
             "matched": 0,
-            "message": "No entries provided"
+            "message": "No valid URLs provided"
         }
 
     # Get today's date for activity filtering
     today = datetime.now(timezone.utc).date()
 
-    # Find matches between entry URLs and contract URLs directly in the database
-    # This is done by checking if any contract URL is contained within the entry URL
+    # Find matches between entry domains and vendor domains in contracts
     matched_entries: List[Tuple[int, str, int]] = []  # (contract_id, browser, timestamp)
 
-    # Get all contract URLs and their contract_ids
-    contract_stmt = select(Contract.contract_id, Contract.product_url).where(
+    # Get all vendor domains and their contract_ids
+    contract_stmt = select(Contract.contract_id, Contract.vendor_domain).where(
         Contract.organization_id == user.organization_id
     )
     contract_data = [(row[0], row[1]) for row in db.execute(contract_stmt)]
 
-    # Match entry URLs with contract URLs
-    # This part still needs Python processing as SQL LIKE/CONTAINS would need
-    # a different approach for substring matching in this direction
-    for entry_url, browser, timestamp in entry_urls:
-        for contract_id, contract_url in contract_data:
-            if contract_url in entry_url:  # Check if contract URL is in entry URL
+    # Match entry domains with vendor domains
+    for _, entry_domain, browser, timestamp in entry_data:
+        for contract_id, vendor_domain in contract_data:
+            if entry_domain == vendor_domain:  # Exact match of domains
                 matched_entries.append((contract_id, browser, timestamp))
                 break  # Found a match, move to next entry
 
