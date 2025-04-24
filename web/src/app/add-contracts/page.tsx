@@ -22,6 +22,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { getOrganizationName } from "@/lib/api/organization-api";
+import { fetchVendorUrls } from "@/lib/api/vendor-api";
 
 // Define the required and optional fields for contracts
 const REQUIRED_FIELDS = [
@@ -100,6 +101,7 @@ export default function AddContractsPage() {
   const [isProcessing, setIsProcessing] = useState(false);
   const [fileData, setFileData] = useState<any[]>([]);
   const [useAIForProductUrl, setUseAIForProductUrl] = useState(false);
+  const [isLoadingUrls, setIsLoadingUrls] = useState(false);
   // Field info is now shown in a Sheet modal instead of a collapsible section
 
   // Handle file selection
@@ -249,17 +251,47 @@ export default function AddContractsPage() {
     let failureCount = 0;
 
     try {
+      // If AI option is selected for product URLs, fetch them first
+      let vendorUrls: Record<string, string> = {};
+
+      if (useAIForProductUrl) {
+        setIsLoadingUrls(true);
+        try {
+          // Extract all vendor names
+          const vendorNames = processedData.map(contract => contract.vendor_name);
+
+          // Call the API route to get URLs via OpenAI
+          const result = await fetchVendorUrls(vendorNames);
+
+          // Create a mapping of vendor name to URL
+          if (result && result.urls && result.urls.length === vendorNames.length) {
+            vendorNames.forEach((name, index) => {
+              vendorUrls[name] = result.urls[index];
+            });
+          } else {
+            // If the API doesn't return enough URLs, show an error and stop processing
+            throw new Error("AI couldn't generate URLs for all vendors. Please try again.");
+          }
+        } catch (error) {
+          console.error("Error fetching vendor URLs with AI:", error);
+          toast.error(`Error generating URLs with AI: ${error instanceof Error ? error.message : 'Unknown error'}. Please try again or uncheck the 'Populate with AI' option.`);
+          setIsLoadingUrls(false);
+          // Return early to prevent processing with incomplete data
+          return;
+        }
+        setIsLoadingUrls(false);
+      }
+
       // Process each contract
       for (const contract of processedData) {
         try {
           // Convert the processed data to the format expected by the API
           const contractData: Contract = {
             vendor_name: contract.vendor_name,
-            // Use placeholder URL if AI option is selected, otherwise use the mapped value
-            // Create a unique URL with random number and vendor name to avoid unique constraint violations
-            product_url: useAIForProductUrl ?
-              `https://${Math.floor(Math.random() * 10000)}.${contract.vendor_name.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '')}.com` :
-              contract.product_url,
+            // Use AI-generated URL if AI option is selected, otherwise use mapped value
+            product_url: useAIForProductUrl
+              ? vendorUrls[contract.vendor_name] // No fallback - we've already validated all URLs exist
+              : contract.product_url,
             organization_id: user.organization_id,
             num_seats: parseInt(contract.number_of_seats) || 1,
             annual_spend: parseFloat(parseFloat(contract.annual_spend || "0").toFixed(2)),
@@ -552,7 +584,7 @@ export default function AddContractsPage() {
                             ))}
                           </select>
                           {field.id === "product_url" && useAIForProductUrl && (
-                            <p className="text-xs text-muted-foreground">Using unique vendor-based placeholder URLs</p>
+                            <p className="text-xs text-muted-foreground">Using AI to generate vendor URLs</p>
                           )}
                         </div>
                       ))}
@@ -595,10 +627,10 @@ export default function AddContractsPage() {
               </div>
             )}
 
-            {isProcessing && (
+            {(isProcessing || isLoadingUrls) && (
               <div className="bg-muted/50 p-8 rounded-md text-center">
                 <p className="text-muted-foreground">
-                  Processing file...
+                  {isLoadingUrls ? "Generating vendor URLs with AI..." : "Processing file..."}
                 </p>
                 <div className="mt-4 flex justify-center">
                   <div className="animate-spin h-6 w-6 border-2 border-primary border-t-transparent rounded-full"></div>
