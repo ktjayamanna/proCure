@@ -617,23 +617,28 @@ export default function AddContractsPage() {
                 </div>
 
                 <div className="flex justify-end space-x-2 pt-4">
-                  <Button variant="outline" onClick={resetForm}>
+                  <Button variant="outline" onClick={resetForm} disabled={isProcessing || isLoadingUrls}>
                     Cancel
                   </Button>
-                  <Button onClick={processData}>
-                    Upload Contracts
+                  <Button
+                    onClick={processData}
+                    disabled={isProcessing || isLoadingUrls}
+                    className="min-w-[150px]"
+                  >
+                    {isLoadingUrls ? (
+                      <>
+                        <span className="animate-spin mr-2 h-4 w-4 border-2 border-white border-t-transparent rounded-full"></span>
+                        Generating URLs...
+                      </>
+                    ) : isProcessing ? (
+                      <>
+                        <span className="animate-spin mr-2 h-4 w-4 border-2 border-white border-t-transparent rounded-full"></span>
+                        Processing...
+                      </>
+                    ) : (
+                      "Upload Contracts"
+                    )}
                   </Button>
-                </div>
-              </div>
-            )}
-
-            {(isProcessing || isLoadingUrls) && (
-              <div className="bg-muted/50 p-8 rounded-md text-center">
-                <p className="text-muted-foreground">
-                  {isLoadingUrls ? "Generating vendor URLs with AI..." : "Processing file..."}
-                </p>
-                <div className="mt-4 flex justify-center">
-                  <div className="animate-spin h-6 w-6 border-2 border-primary border-t-transparent rounded-full"></div>
                 </div>
               </div>
             )}
