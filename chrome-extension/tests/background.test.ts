@@ -125,7 +125,7 @@ describe('Background Script with Authentication Persistence', () => {
   it('should run sync when user is authenticated', async () => {
     // Mock getCurrentUser to return a user
     (auth.getCurrentUser as jest.Mock).mockResolvedValue({
-      employee_id: 'emp123',
+      id: 'emp123',
       email: 'test@example.com'
     });
 

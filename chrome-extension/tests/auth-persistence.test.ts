@@ -11,7 +11,7 @@ import {
 
 // Mock data
 const mockUser = {
-  employee_id: 'emp123',
+  id: 'emp123',
   email: 'test@example.com',
   organization_id: 'org123',
   role: 'member'
@@ -63,7 +63,7 @@ describe('Authentication Persistence', () => {
     (global.fetch as jest.Mock).mockResolvedValueOnce({
       ok: true,
       json: jest.fn().mockResolvedValueOnce({
-        employee_id: mockUser.employee_id,
+        id: mockUser.id,
         email: mockUser.email,
         organization_id: mockUser.organization_id,
         role: mockUser.role,
@@ -96,7 +96,7 @@ describe('Authentication Persistence', () => {
     (global.fetch as jest.Mock).mockResolvedValueOnce({
       ok: true,
       json: jest.fn().mockResolvedValueOnce({
-        employee_id: mockUser.employee_id,
+        id: mockUser.id,
         email: mockUser.email,
         organization_id: mockUser.organization_id,
         role: mockUser.role,

@@ -14,7 +14,7 @@ const API_URL = 'http://localhost:8000/api/v1/auth'
 
 // Types
 export interface User {
-  employee_id: string
+  id: string
   email: string
   organization_id?: string
   role?: string
@@ -97,7 +97,7 @@ export const signUp = async (
 
   // Store user and token in storage
   const user: User = {
-    employee_id: data.employee_id,
+    id: data.id,
     email: data.email,
     organization_id: data.organization_id,
     role: data.role
@@ -155,7 +155,7 @@ export const signIn = async (
 
   // Store user and token in storage
   const user: User = {
-    employee_id: data.employee_id,
+    id: data.id,
     email: data.email,
     organization_id: data.organization_id,
     role: data.role
@@ -199,7 +199,7 @@ export const signInWithToken = async (): Promise<{ user: User; token: string } |
 
     // Update user data in storage
     const user: User = {
-      employee_id: data.employee_id,
+      id: data.id,
       email: data.email,
       organization_id: data.organization_id,
       role: data.role
