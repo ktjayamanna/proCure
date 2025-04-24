@@ -1,6 +1,5 @@
-from sqlalchemy import select
+from sqlalchemy import select, func
 from sqlalchemy.orm import Session
-from sqlalchemy.sql import text
 from datetime import datetime, timezone
 from typing import List, Dict, Any, Optional
 
@@ -75,20 +74,16 @@ def process_url_visits(
     # Extract just the domains for the SQL IN clause
     domains = [domain for domain, _, _ in entry_domains]
 
-    # Use a more direct approach with SQLAlchemy
+    # Use SQLAlchemy 2.0 style with Core expressions
     # First, get all contracts that match the domains
-    contracts_query = text("""
-        SELECT c.contract_id, c.vendor_domain
-        FROM contracts c
-        WHERE c.organization_id = :org_id
-        AND c.vendor_domain IN :domains
-    """)
+    contracts_query = (
+        select(Contract.contract_id, Contract.vendor_domain)
+        .where(Contract.organization_id == user.organization_id)
+        .where(Contract.vendor_domain.in_(domains))
+    )
 
     # Execute the query to get matching contracts
-    matching_contracts = db.execute(
-        contracts_query,
-        {"org_id": user.organization_id, "domains": tuple(domains)}
-    ).fetchall()
+    matching_contracts = db.execute(contracts_query).fetchall()
 
     if not matching_contracts:
         return {
@@ -101,20 +96,20 @@ def process_url_visits(
     # Get contract IDs that already have activities for today
     contract_ids = [contract[0] for contract in matching_contracts]
 
-    existing_activities_query = text("""
-        SELECT ua.contract_id
-        FROM user_activities ua
-        WHERE ua.user_id = :user_id
-        AND ua.contract_id IN :contract_ids
-        AND DATE(ua.date) = :today
-    """)
-
-    existing_contract_ids = {
-        row[0] for row in db.execute(
-            existing_activities_query,
-            {"user_id": user.id, "contract_ids": tuple(contract_ids), "today": today}
+    if not contract_ids:  # Handle empty list to avoid SQL error with empty IN clause
+        existing_contract_ids = set()
+    else:
+        # Use SQLAlchemy 2.0 style for the activities query
+        existing_activities_query = (
+            select(UserActivity.contract_id)
+            .where(UserActivity.user_id == user.id)
+            .where(UserActivity.contract_id.in_(contract_ids))
+            .where(func.date(UserActivity.date) == today)
         )
-    }
+
+        existing_contract_ids = {
+            row[0] for row in db.execute(existing_activities_query).fetchall()
+        }
 
     # Create a mapping of domain to (browser, timestamp)
     domain_to_metadata = {}
