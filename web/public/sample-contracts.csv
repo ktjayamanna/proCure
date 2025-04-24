@@ -1,7 +1,7 @@
 vendor_name,annual_spend,contract_type,contract_status,payment_type,product_url,number_of_seats,owner,expire_at,created_at,notes
 Salesforce,50000,subscription,active,ACH,https://salesforce.com,25,John Doe,2024-12-31,2023-01-01,CRM system for sales team
 Microsoft,35000,year to year,active,virtual cards,https://microsoft.com,50,Jane Smith,2025-06-30,2022-06-30,Office 365 and Azure services
-Zoom,12000,month to month,active,In app purchases,https://zoom.us,100,Mike Johnson,2024-09-15,2023-09-15,Video conferencing solution
+Zoom,12000,month to month,active,In app purchases,https://zoom.com,100,Mike Johnson,2024-09-15,2023-09-15,Video conferencing solution
 Slack,8000,subscription,active,virtual cards,https://slack.com,75,Sarah Williams,2024-10-01,2023-10-01,Team communication platform
 Adobe,15000,year to year,inactive,International Wire,https://adobe.com,10,David Brown,2023-12-31,2022-12-31,Creative Cloud licenses
 Dropbox,6000,subscription,active,ACH,https://dropbox.com,30,Emily Davis,2024-08-15,2023-08-15,Cloud storage solution
