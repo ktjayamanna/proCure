@@ -42,7 +42,7 @@ export async function POST(request: NextRequest) {
         },
         {
           role: "user",
-          content: `Following is a list of saas tools used by our business. What are the URLs of these tools? ${vendors.join(", ")}`,
+          content: `Following is a list of saas tools used by our business. What are the URLs of these tools? Please format the URLs as Scheme + Host, for example: https://chatgpt.com. Here are the tools: ${vendors.join(", ")}`,
         },
       ],
       text: {
