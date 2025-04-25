@@ -101,6 +101,8 @@ export default function AddContractsPage() {
   const [isProcessing, setIsProcessing] = useState(false);
   const [fileData, setFileData] = useState<any[]>([]);
   const [useAIForProductUrl, setUseAIForProductUrl] = useState(false);
+  const [useDefaultNumSeats, setUseDefaultNumSeats] = useState(false);
+  const [useDefaultAnnualSpend, setUseDefaultAnnualSpend] = useState(false);
   const [isLoadingUrls, setIsLoadingUrls] = useState(false);
   // Field info is now shown in a Sheet modal instead of a collapsible section
 
@@ -195,11 +197,17 @@ export default function AddContractsPage() {
 
   // Process the mapped data
   const processData = useCallback(async () => {
-    // Check if all required fields are mapped, with special handling for product_url when AI is enabled
+    // Check if all required fields are mapped, with special handling for fields with default values
     const missingRequiredFields = REQUIRED_FIELDS.filter(
       (field) => {
-        // Skip product_url validation if AI is enabled
+        // Skip validation for fields with default values enabled
         if (field.id === "product_url" && useAIForProductUrl) {
+          return false;
+        }
+        if (field.id === "number_of_seats" && useDefaultNumSeats) {
+          return false;
+        }
+        if (field.id === "annual_spend" && useDefaultAnnualSpend) {
           return false;
         }
         return !mappings[field.id];
@@ -293,8 +301,14 @@ export default function AddContractsPage() {
               ? vendorUrls[contract.vendor_name] // No fallback - we've already validated all URLs exist
               : contract.product_url,
             organization_id: user.organization_id,
-            num_seats: parseInt(contract.number_of_seats) || 1,
-            annual_spend: parseFloat(parseFloat(contract.annual_spend || "0").toFixed(2)),
+            // Use default value of 1 if checkbox is checked, otherwise parse from input
+            num_seats: useDefaultNumSeats
+              ? 1
+              : parseInt(contract.number_of_seats) || 1,
+            // Use default value of 0 if checkbox is checked, otherwise parse from input
+            annual_spend: useDefaultAnnualSpend
+              ? 0
+              : parseFloat(parseFloat(contract.annual_spend || "0").toFixed(2)),
             contract_type: contract.contract_type,
             contract_status: contract.contract_status,
             payment_type: contract.payment_type,
@@ -363,7 +377,7 @@ export default function AddContractsPage() {
         fileInputRef.current.value = "";
       }
     }
-  }, [fileData, mappings, user?.organization_id, useAIForProductUrl]);
+  }, [fileData, mappings, user?.organization_id, useAIForProductUrl, useDefaultNumSeats, useDefaultAnnualSpend]);
 
   // Reset the form
   const resetForm = () => {
@@ -372,6 +386,8 @@ export default function AddContractsPage() {
     setMappings({});
     setFileData([]);
     setUseAIForProductUrl(false);
+    setUseDefaultNumSeats(false);
+    setUseDefaultAnnualSpend(false);
     if (fileInputRef.current) {
       fileInputRef.current.value = "";
     }
@@ -568,13 +584,41 @@ export default function AddContractsPage() {
                                 </Label>
                               </div>
                             )}
+                            {field.id === "number_of_seats" && (
+                              <div className="flex items-center space-x-2">
+                                <input
+                                  type="checkbox"
+                                  id="use-default-num-seats"
+                                  checked={useDefaultNumSeats}
+                                  onChange={(e) => setUseDefaultNumSeats(e.target.checked)}
+                                  className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
+                                />
+                                <Label htmlFor="use-default-num-seats" className="text-sm font-normal">
+                                  Default to 1
+                                </Label>
+                              </div>
+                            )}
+                            {field.id === "annual_spend" && (
+                              <div className="flex items-center space-x-2">
+                                <input
+                                  type="checkbox"
+                                  id="use-default-annual-spend"
+                                  checked={useDefaultAnnualSpend}
+                                  onChange={(e) => setUseDefaultAnnualSpend(e.target.checked)}
+                                  className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
+                                />
+                                <Label htmlFor="use-default-annual-spend" className="text-sm font-normal">
+                                  Default to 0
+                                </Label>
+                              </div>
+                            )}
                           </div>
                           <select
                             id={`mapping-${field.id}`}
-                            className={`w-full h-9 rounded-md border border-input px-3 py-1 text-sm shadow-xs transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring ${field.id === "product_url" && useAIForProductUrl ? "bg-gray-100 text-gray-500" : "bg-transparent"}`}
+                            className={`w-full h-9 rounded-md border border-input px-3 py-1 text-sm shadow-xs transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring ${(field.id === "product_url" && useAIForProductUrl) || (field.id === "number_of_seats" && useDefaultNumSeats) || (field.id === "annual_spend" && useDefaultAnnualSpend) ? "bg-gray-100 text-gray-500" : "bg-transparent"}`}
                             value={mappings[field.id] || ""}
                             onChange={(e) => updateMapping(field.id, e.target.value)}
-                            disabled={field.id === "product_url" && useAIForProductUrl}
+                            disabled={(field.id === "product_url" && useAIForProductUrl) || (field.id === "number_of_seats" && useDefaultNumSeats) || (field.id === "annual_spend" && useDefaultAnnualSpend)}
                           >
                             <option value="">Select a column</option>
                             {headers.map((header) => (
@@ -585,6 +629,12 @@ export default function AddContractsPage() {
                           </select>
                           {field.id === "product_url" && useAIForProductUrl && (
                             <p className="text-xs text-muted-foreground">Using AI to generate vendor URLs</p>
+                          )}
+                          {field.id === "number_of_seats" && useDefaultNumSeats && (
+                            <p className="text-xs text-muted-foreground">Using default value: 1</p>
+                          )}
+                          {field.id === "annual_spend" && useDefaultAnnualSpend && (
+                            <p className="text-xs text-muted-foreground">Using default value: 0</p>
                           )}
                         </div>
                       ))}
