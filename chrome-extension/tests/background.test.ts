@@ -26,9 +26,10 @@ describe('Background Script with Authentication Persistence', () => {
 
   it('should set up alarms for sync and cleanup', () => {
     // Verify alarms were created
-    expect(chrome.alarms.create).toHaveBeenCalledWith('syncDomainEntries', {
-      periodInMinutes: 120
-    });
+    expect(chrome.alarms.create).toHaveBeenCalledWith('syncDomainEntries', expect.objectContaining({
+      periodInMinutes: 120,
+      delayInMinutes: expect.any(Number)
+    }));
 
     expect(chrome.alarms.create).toHaveBeenCalledWith('cleanupExpiredHostnames', {
       periodInMinutes: 60

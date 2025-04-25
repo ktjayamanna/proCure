@@ -74,8 +74,13 @@ const syncDomainEntries = async () => {
   }
 }
 
-// Set up alarm for syncing (every 2 hours)
+// Generate a random initial delay between 0 and 120 minutes to distribute sync load
+const initialSyncDelayMinutes = Math.floor(Math.random() * 120);
+
+// Set up alarm for syncing (every 2 hours) with random initial delay
+console.log(`Setting up sync with initial delay of ${initialSyncDelayMinutes} minutes`)
 chrome.alarms.create('syncDomainEntries', {
+  delayInMinutes: initialSyncDelayMinutes,
   periodInMinutes: 120 // 2 hours
 })
 
