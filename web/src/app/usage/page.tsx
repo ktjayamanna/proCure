@@ -82,7 +82,7 @@ export default function UsagePage() {
       usageMetrics: {
         total_spend: totalSpend,
         contract_count: contractCount,
-        underutilized_percentage: underutilizedPercentage,
+        underutilized_percentage: contractCount > 0 ? underutilizedPercentage : "N/A",
         potential_savings: potentialSavings
       }
     };
@@ -211,7 +211,9 @@ export default function UsagePage() {
               {isLoading ? (
                 <span className="text-muted-foreground text-lg">Loading...</span>
               ) : usageMetrics ? (
-                `${usageMetrics.underutilized_percentage}%`
+                typeof usageMetrics.underutilized_percentage === 'number' 
+                  ? `${usageMetrics.underutilized_percentage}%`
+                  : usageMetrics.underutilized_percentage
               ) : (
                 <span className="text-muted-foreground text-lg">N/A</span>
               )}
