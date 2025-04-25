@@ -1,4 +1,4 @@
-from sqlalchemy import select, func
+from sqlalchemy import select, func, extract
 from sqlalchemy.orm import Session
 from datetime import datetime, timezone
 from typing import List, Dict, Any, Optional
@@ -34,7 +34,7 @@ def process_url_visits(
     1. Finds the user by email
     2. Extracts base domains from entry URLs using tldextract
     3. Uses SQLAlchemy to match entry domains with vendor domains in contracts
-    4. Filters out URLs that already have activities for today
+    4. Filters out URLs that already have activities for the current month
     5. Creates new activities for those URLs
     """
     # Get user
@@ -68,8 +68,10 @@ def process_url_visits(
             "message": "No valid URLs provided"
         }
 
-    # Get today's date for activity filtering
-    today = datetime.now(timezone.utc).date()
+    # Get current month and year for activity filtering
+    now = datetime.now(timezone.utc)
+    current_month = now.month
+    current_year = now.year
 
     # Extract just the domains for the SQL IN clause
     domains = [domain for domain, _, _ in entry_domains]
@@ -93,7 +95,7 @@ def process_url_visits(
             "message": "No matching URLs found"
         }
 
-    # Get contract IDs that already have activities for today
+    # Get contract IDs that already have activities for the current month
     contract_ids = [contract[0] for contract in matching_contracts]
 
     if not contract_ids:  # Handle empty list to avoid SQL error with empty IN clause
@@ -104,7 +106,8 @@ def process_url_visits(
             select(UserActivity.contract_id)
             .where(UserActivity.user_id == user.id)
             .where(UserActivity.contract_id.in_(contract_ids))
-            .where(func.date(UserActivity.date) == today)
+            .where(extract('month', UserActivity.date) == current_month)
+            .where(extract('year', UserActivity.date) == current_year)
         )
 
         existing_contract_ids = {
@@ -118,7 +121,7 @@ def process_url_visits(
         if domain not in domain_to_metadata or timestamp > domain_to_metadata[domain][1]:
             domain_to_metadata[domain] = (browser, timestamp)
 
-    # Create new activities for contracts that don't have activities today
+    # Create new activities for contracts that don't have activities this month
     matched_entries = []
     for contract_id, vendor_domain in matching_contracts:
         if contract_id not in existing_contract_ids and vendor_domain in domain_to_metadata:
@@ -130,7 +133,7 @@ def process_url_visits(
             "success": True,
             "processed": len(entries),
             "matched": 0,
-            "message": "No matching URLs found or all matches already have activities today"
+            "message": "No matching URLs found or all matches already have activities this month"
         }
 
     # Create new activities for the matched entries
