@@ -57,7 +57,7 @@ export const SyncStatusDisplay: React.FC<SyncStatusDisplayProps> = ({ onSyncComp
         </button>
       </div>
       <p className="sync-note">
-        Site data is automatically synced every 2 minutes.
+        Site data is automatically synced every 2 hours.
       </p>
     </div>
   );

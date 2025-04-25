@@ -74,9 +74,9 @@ const syncDomainEntries = async () => {
   }
 }
 
-// Set up alarm for syncing (every 2 minutes)
+// Set up alarm for syncing (every 2 hours)
 chrome.alarms.create('syncDomainEntries', {
-  periodInMinutes: 2
+  periodInMinutes: 120 // 2 hours
 })
 
 // Listen for alarm events
