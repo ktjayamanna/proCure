@@ -1,6 +1,5 @@
 from logging.config import fileConfig
-from sqlalchemy import engine_from_config
-from sqlalchemy import pool
+import os
 from alembic import context
 from procure.db.models import Base
 from procure.db.engine import engine
@@ -12,11 +11,12 @@ if config.config_file_name is not None:
 
 target_metadata = Base.metadata
 
-# Override the sqlalchemy.url from config
-config.set_main_option("sqlalchemy.url", engine.url.render_as_string(hide_password=False))
+# Don't set sqlalchemy.url in the config to avoid interpolation issues
+# We'll use the engine directly in run_migrations_online
 
 def run_migrations_offline() -> None:
-    url = config.get_main_option("sqlalchemy.url")
+    # Use DATABASE_URL from environment or fall back to engine URL
+    url = os.getenv("DATABASE_URL") or engine.url.render_as_string(hide_password=False)
     context.configure(
         url=url,
         target_metadata=target_metadata,
@@ -26,6 +26,11 @@ def run_migrations_offline() -> None:
 
     with context.begin_transaction():
         context.run_migrations()
+
+def process_revision_directives(context, revision, directives):  # pylint: disable=unused-argument
+    # This function can be customized if needed
+    # Unused parameters are kept for the correct function signature
+    pass
 
 def run_migrations_online() -> None:
     # Skip DB connection if we're just generating migrations
@@ -38,11 +43,9 @@ def run_migrations_online() -> None:
             context.run_migrations()
         return
 
-    connectable = engine_from_config(
-        config.get_section(config.config_ini_section, {}),
-        prefix="sqlalchemy.",
-        poolclass=pool.NullPool,
-    )
+    # Use the existing engine instead of creating a new one from config
+    # This avoids the need to set sqlalchemy.url in the config
+    connectable = engine.execution_options(isolation_level="AUTOCOMMIT")
 
     with connectable.connect() as connection:
         context.configure(
