@@ -30,7 +30,11 @@ services:
       postgres:
         condition: service_healthy
     environment:
-      DATABASE_URL: postgresql://procure_user:procure_password@postgres:5432/procure_db
+      # Use the host's environment variables if set, otherwise use defaults
+      DATABASE_URL: ${DATABASE_URL:-postgresql://procure_user:procure_password@postgres:5432/procure_db}
+      DB_USE_IAM_AUTH: ${DB_USE_IAM_AUTH:-false}
+      AWS_DATABASE_URL: ${AWS_DATABASE_URL:-}
+      AWS_REGION: ${AWS_REGION:-us-east-2}
       PYTHONPATH: /app
     volumes:
       - ../../backend:/app
