@@ -7,7 +7,7 @@ from sqlalchemy import text
 
 # Import the database engine and configuration
 from procure.db.engine import engine
-from procure.db.config import DB_USE_IAM_AUTH, LOCAL_DATABASE_URL, AWS_DATABASE_URL
+from procure.configs.app_configs import DB_USE_IAM_AUTH, LOCAL_DATABASE_URL, AWS_DATABASE_URL
 
 def test_connection():
     """Test the database connection."""

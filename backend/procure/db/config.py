@@ -3,22 +3,18 @@ Database configuration module for proCure.
 Supports both local Docker-based PostgreSQL and AWS RDS with IAM authentication.
 """
 
-import os
 import boto3
 from urllib.parse import urlparse
-from dotenv import load_dotenv
 
-# Load environment variables
-load_dotenv(".vscode/.env")
-
-# Database configuration constants
-DB_USE_IAM_AUTH = os.getenv("DB_USE_IAM_AUTH", "false").lower() == "true"
-LOCAL_DATABASE_URL = os.getenv("DATABASE_URL", "postgresql://procure_user:procure_password@localhost:5432/procure_db")
-AWS_DATABASE_URL = os.getenv("AWS_DATABASE_URL")
-AWS_REGION = os.getenv("AWS_REGION", "us-east-2")
+from procure.configs.app_configs import (
+    DB_USE_IAM_AUTH,
+    LOCAL_DATABASE_URL,
+    AWS_DATABASE_URL,
+    AWS_REGION
+)
 
 
-def get_iam_auth_token(host, port, user, region="us-east-2"):
+def get_iam_auth_token(host, port, user, region=AWS_REGION):
     """
     Generate an IAM authentication token for AWS RDS.
 

@@ -1,6 +1,7 @@
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, declarative_base
-from procure.db.config import get_db_connection_string, DB_USE_IAM_AUTH
+from procure.db.config import get_db_connection_string
+from procure.configs.app_configs import DB_USE_IAM_AUTH
 
 DATABASE_URL = get_db_connection_string()
 
