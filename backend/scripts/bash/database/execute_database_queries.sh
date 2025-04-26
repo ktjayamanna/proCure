@@ -10,6 +10,9 @@ set -euo pipefail
 # Path to .env file
 ENV_FILE="backend/.vscode/.env"
 
+# Set working directory to project root
+cd "$(dirname "$0")/../../.." || exit 1
+
 # Allow passing query file as an argument
 QUERY_FILE="${1:-backend/scripts/sql/add_test_data.sql}"
 

@@ -15,7 +15,7 @@ fi
 DESCRIPTION="$1"
 
 # Navigate to backend directory where alembic.ini is located
-cd "$(dirname "$0")/../../"
+cd "$(dirname "$0")/../../.."
 
 # Ensure we're in the correct directory
 if [ ! -f "alembic.ini" ]; then

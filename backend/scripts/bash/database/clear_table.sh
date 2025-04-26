@@ -32,7 +32,7 @@ done
 # Resolve paths
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(cd "$SCRIPT_DIR/../../.." && pwd)"
-SQL_SCRIPT="$SCRIPT_DIR/../sql/clear_table.sql"
+SQL_SCRIPT="$SCRIPT_DIR/../../sql/clear_table.sql"
 ENV_FILE="$PROJECT_ROOT/backend/.vscode/.env"
 
 # Sanity checks

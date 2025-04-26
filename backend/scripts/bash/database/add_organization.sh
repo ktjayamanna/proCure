@@ -34,7 +34,7 @@ done
 # Resolve paths
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(cd "$SCRIPT_DIR/../../.." && pwd)"
-SQL_FILE="$SCRIPT_DIR/../sql/add_organization.sql"
+SQL_FILE="$SCRIPT_DIR/../../sql/add_organization.sql"
 ENV_FILE="$PROJECT_ROOT/backend/.vscode/.env"
 
 # Sanity checks
@@ -61,13 +61,13 @@ export PGPASSWORD="$DB_PASS"
 generate_org_id() {
   local BASE62="0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz"
   local body=""
-  
+
   # Generate 32 random characters from BASE62
   for ((i=0; i<32; i++)); do
     local idx=$((RANDOM % 62))
     body="${body}${BASE62:$idx:1}"
   done
-  
+
   echo "org_${body}"
 }
 
@@ -83,25 +83,25 @@ else
   # Interactive mode - prompt for values
   echo "🏢 Adding a new organization to the database"
   echo "-------------------------------------------"
-  
+
   # Generate organization ID
   ORGANIZATION_ID=$(generate_org_id)
   echo "Organization ID: $ORGANIZATION_ID"
-  
+
   # Prompt for domain name
   read -p "Enter domain name (e.g., example.com): " DOMAIN_NAME
   while [[ -z "$DOMAIN_NAME" ]]; do
     echo "❌ Domain name cannot be empty"
     read -p "Enter domain name (e.g., example.com): " DOMAIN_NAME
   done
-  
+
   # Prompt for company name
   read -p "Enter company name (e.g., Example Corporation): " COMPANY_NAME
-  
+
   # Prompt for admins remaining
   read -p "Enter number of admin slots (default: 1): " ADMINS_INPUT
   ADMINS_REMAINING=${ADMINS_INPUT:-1}
-  
+
   # Prompt for members remaining
   read -p "Enter number of member slots (default: 1000): " MEMBERS_INPUT
   MEMBERS_REMAINING=${MEMBERS_INPUT:-1000}
@@ -119,7 +119,7 @@ ON CONFLICT (organization_id) DO UPDATE SET
   members_remaining = EXCLUDED.members_remaining;
 
 -- Verify the data
-SELECT 
+SELECT
     o.organization_id,
     o.domain_name,
     o.company_name,

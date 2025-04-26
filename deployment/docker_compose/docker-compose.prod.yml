@@ -1,0 +1,33 @@
+version: "3.8"
+
+services:
+  core_service:
+    build:
+      context: ../../
+      dockerfile: deployment/docker_compose/Dockerfile
+    container_name: procure_core_service
+    environment:
+      # In production, we always use AWS RDS with IAM authentication
+      DB_USE_IAM_AUTH: "true"
+      AWS_DATABASE_URL: ${AWS_DATABASE_URL}
+      AWS_REGION: ${AWS_REGION:-us-east-2}
+      PYTHONPATH: /app
+      # Pass through other environment variables
+      GOOGLE_CLOUD_PROJECT: ${GOOGLE_CLOUD_PROJECT:-}
+      FIREBASE_CREDENTIALS_BASE64: ${FIREBASE_CREDENTIALS_BASE64:-}
+      JWT_SECRET: ${JWT_SECRET:-}
+      NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: ${NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY:-}
+      CLERK_SECRET_KEY: ${CLERK_SECRET_KEY:-}
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+    ports:
+      - "8000:8000"  # Main API port
+    networks:
+      - procure_network
+    command: >
+      sh -c "
+        cd /app &&
+        alembic upgrade head &&
+        uvicorn procure.server.main:app --host 0.0.0.0 --port 8000"
+
+networks:
+  procure_network:
