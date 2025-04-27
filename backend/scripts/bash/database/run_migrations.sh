@@ -1,6 +1,29 @@
 #!/bin/bash
 
 # Script to run database migrations
+# Usage:
+#   ./run_migrations.sh             # Run migrations using settings from .env
+#   ./run_migrations.sh --use-rds   # Force using AWS RDS for migrations
+
+# Default values
+USE_RDS_FLAG=false
+
+# Parse arguments
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    --use-rds)
+      USE_RDS_FLAG=true
+      shift
+      ;;
+    -*|--*)
+      echo "❌ Unknown option: $1" >&2
+      exit 1
+      ;;
+    *)
+      shift
+      ;;
+  esac
+done
 
 # Set working directory to backend
 cd "$(dirname "$0")/../../.." || exit 1
@@ -15,6 +38,25 @@ else
     echo "No .env file found, using default local database URL"
     export DATABASE_URL="postgresql://procure_user:procure_password@localhost:5432/procure_db"
     export USE_RDS="false"
+fi
+
+# Override USE_RDS if --use-rds flag was provided
+if $USE_RDS_FLAG; then
+    export USE_RDS="true"
+    echo "🌐 Forcing AWS RDS usage due to --use-rds flag"
+
+    # Check if AWS_DATABASE_URL is set
+    if [ -z "${AWS_DATABASE_URL:-}" ]; then
+        echo "❌ AWS_DATABASE_URL is not set in .env file"
+        exit 1
+    fi
+fi
+
+# Display which database we're using
+if [ "$USE_RDS" = "true" ]; then
+    echo "🌐 Using AWS RDS database"
+else
+    echo "💻 Using local database"
 fi
 
 # Set Python path
@@ -67,11 +109,28 @@ fi
 # Check if migrations directory exists
 if [ -z "$(ls -A alembic/versions/ 2>/dev/null)" ]; then
     echo "🔄 Generating initial migration..."
-    alembic revision --autogenerate -m "initial schema"
-    alembic upgrade head
+
+    # Add SSL mode for RDS connections if needed
+    if [ "$USE_RDS" = "true" ]; then
+        # Set SSL mode for SQLAlchemy
+        export SQLALCHEMY_DATABASE_URI="${AWS_DATABASE_URL}?sslmode=require"
+        alembic revision --autogenerate -m "initial schema"
+        alembic upgrade head
+    else
+        alembic revision --autogenerate -m "initial schema"
+        alembic upgrade head
+    fi
 else
     echo "🔄 Running database migrations..."
-    alembic upgrade head
+
+    # Add SSL mode for RDS connections if needed
+    if [ "$USE_RDS" = "true" ]; then
+        # Set SSL mode for SQLAlchemy
+        export SQLALCHEMY_DATABASE_URI="${AWS_DATABASE_URL}?sslmode=require"
+        alembic upgrade head
+    else
+        alembic upgrade head
+    fi
 fi
 
 echo "✅ Database migrations completed successfully!"

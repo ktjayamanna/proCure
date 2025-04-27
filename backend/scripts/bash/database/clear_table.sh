@@ -4,11 +4,14 @@
 #   ./clear_table.sh                # clears user_activities (default)
 #   ./clear_table.sh <table>        # clears specified table
 #   ./clear_table.sh --all          # clears ALL predefined tables in proper order
+#   ./clear_table.sh --use-rds      # use AWS RDS instead of local database
+#   ./clear_table.sh --all --use-rds # clear all tables in AWS RDS
 
 set -euo pipefail
 
 # Defaults
 ALL=false
+USE_RDS=false
 TABLE_NAME="user_activities"
 
 # Parse flags / positional
@@ -16,6 +19,10 @@ while [[ $# -gt 0 ]]; do
   case "$1" in
     -a|--all)
       ALL=true
+      shift
+      ;;
+    --use-rds)
+      USE_RDS=true
       shift
       ;;
     -*|--*)
@@ -33,7 +40,7 @@ done
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(cd "$SCRIPT_DIR/../../.." && pwd)"
 SQL_SCRIPT="$SCRIPT_DIR/../../sql/clear_table.sql"
-ENV_FILE="$PROJECT_ROOT/backend/.vscode/.env"
+ENV_FILE="$PROJECT_ROOT/.vscode/.env"
 
 # Sanity checks
 [[ -f "$SQL_SCRIPT" ]]  || { echo "❌ SQL script not found at $SQL_SCRIPT"; exit 1; }
@@ -41,17 +48,27 @@ ENV_FILE="$PROJECT_ROOT/backend/.vscode/.env"
 
 # Load env vars
 export $(grep -v '^#' "$ENV_FILE" | xargs)
-[[ -n "${DATABASE_URL:-}" ]] || { echo "❌ DATABASE_URL missing in .env"; exit 1; }
+
+# Check for required environment variables
+if $USE_RDS; then
+  [[ -n "${AWS_DATABASE_URL:-}" ]] || { echo "❌ AWS_DATABASE_URL missing in .env"; exit 1; }
+  DB_URL="$AWS_DATABASE_URL"
+  echo "🌐 Using AWS RDS database"
+else
+  [[ -n "${DATABASE_URL:-}" ]] || { echo "❌ DATABASE_URL missing in .env"; exit 1; }
+  DB_URL="$DATABASE_URL"
+  echo "💻 Using local database"
+fi
 
 # Parse DATABASE_URL
-if [[ "$DATABASE_URL" =~ ^postgresql://([^:]+):([^@]+)@([^:]+):([0-9]+)/(.+)$ ]]; then
+if [[ "$DB_URL" =~ ^postgresql://([^:]+):([^@]+)@([^:]+):([0-9]+)/(.+)$ ]]; then
   DB_USER="${BASH_REMATCH[1]}"
   DB_PASS="${BASH_REMATCH[2]}"
   DB_HOST="${BASH_REMATCH[3]}"
   DB_PORT="${BASH_REMATCH[4]}"
   DB_NAME="${BASH_REMATCH[5]}"
 else
-  echo "❌ Could not parse DATABASE_URL" >&2
+  echo "❌ Could not parse database URL" >&2
   exit 1
 fi
 export PGPASSWORD="$DB_PASS"
@@ -70,13 +87,26 @@ echo
 clear_table() {
   local tbl="$1"
   echo "🗑️  Clearing table: $tbl"
-  psql \
-    -h "$DB_HOST" \
-    -p "$DB_PORT" \
-    -d "$DB_NAME" \
-    -U "$DB_USER" \
-    -v table_to_clear="$tbl" \
-    -f "$SQL_SCRIPT"
+
+  # Add SSL mode for RDS connections
+  if $USE_RDS; then
+    psql \
+      -h "$DB_HOST" \
+      -p "$DB_PORT" \
+      -d "$DB_NAME" \
+      -U "$DB_USER" \
+      -v table_to_clear="$tbl" \
+      -f "$SQL_SCRIPT" \
+      --set=sslmode=require
+  else
+    psql \
+      -h "$DB_HOST" \
+      -p "$DB_PORT" \
+      -d "$DB_NAME" \
+      -U "$DB_USER" \
+      -v table_to_clear="$tbl" \
+      -f "$SQL_SCRIPT"
+  fi
 }
 
 # Execute
