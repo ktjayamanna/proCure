@@ -3,11 +3,14 @@
 # Usage:
 #   ./add_organization.sh                # Interactive mode with prompts
 #   ./add_organization.sh --default      # Add Firebay Studios organization
+#   ./add_organization.sh --use-rds      # Use AWS RDS instead of local database
+#   ./add_organization.sh --default --use-rds  # Add Firebay Studios to AWS RDS
 
 set -euo pipefail
 
 # Default values
 DEFAULT_MODE=false
+USE_RDS=false
 ORGANIZATION_ID=""
 DOMAIN_NAME=""
 COMPANY_NAME=""
@@ -19,6 +22,10 @@ while [[ $# -gt 0 ]]; do
   case "$1" in
     --default)
       DEFAULT_MODE=true
+      shift
+      ;;
+    --use-rds)
+      USE_RDS=true
       shift
       ;;
     -*|--*)
@@ -35,24 +42,34 @@ done
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(cd "$SCRIPT_DIR/../../.." && pwd)"
 SQL_FILE="$SCRIPT_DIR/../../sql/add_organization.sql"
-ENV_FILE="$PROJECT_ROOT/backend/.vscode/.env"
+ENV_FILE="$PROJECT_ROOT/.vscode/.env"
 
 # Sanity checks
 [[ -f "$ENV_FILE" ]] || { echo "❌ .env file not found at $ENV_FILE"; exit 1; }
 
 # Load env vars
 export $(grep -v '^#' "$ENV_FILE" | xargs)
-[[ -n "${DATABASE_URL:-}" ]] || { echo "❌ DATABASE_URL missing in .env"; exit 1; }
+
+# Check for required environment variables
+if $USE_RDS; then
+  [[ -n "${AWS_DATABASE_URL:-}" ]] || { echo "❌ AWS_DATABASE_URL missing in .env"; exit 1; }
+  DB_URL="$AWS_DATABASE_URL"
+  echo "🌐 Using AWS RDS database"
+else
+  [[ -n "${DATABASE_URL:-}" ]] || { echo "❌ DATABASE_URL missing in .env"; exit 1; }
+  DB_URL="$DATABASE_URL"
+  echo "💻 Using local database"
+fi
 
 # Parse DATABASE_URL
-if [[ "$DATABASE_URL" =~ ^postgresql://([^:]+):([^@]+)@([^:]+):([0-9]+)/(.+)$ ]]; then
+if [[ "$DB_URL" =~ ^postgresql://([^:]+):([^@]+)@([^:]+):([0-9]+)/(.+)$ ]]; then
   DB_USER="${BASH_REMATCH[1]}"
   DB_PASS="${BASH_REMATCH[2]}"
   DB_HOST="${BASH_REMATCH[3]}"
   DB_PORT="${BASH_REMATCH[4]}"
   DB_NAME="${BASH_REMATCH[5]}"
 else
-  echo "❌ Could not parse DATABASE_URL" >&2
+  echo "❌ Could not parse database URL" >&2
   exit 1
 fi
 export PGPASSWORD="$DB_PASS"
@@ -131,7 +148,13 @@ EOF
 
 # Execute SQL file
 echo "📄 Executing SQL to add organization..."
-psql -h "$DB_HOST" -p "$DB_PORT" -d "$DB_NAME" -U "$DB_USER" -f "$SQL_FILE"
+
+# Add SSL mode for RDS connections
+if $USE_RDS; then
+  psql -h "$DB_HOST" -p "$DB_PORT" -d "$DB_NAME" -U "$DB_USER" -f "$SQL_FILE" --set=sslmode=require
+else
+  psql -h "$DB_HOST" -p "$DB_PORT" -d "$DB_NAME" -U "$DB_USER" -f "$SQL_FILE"
+fi
 
 echo "✅ Organization created successfully!"
 echo "Organization ID: $ORGANIZATION_ID"
