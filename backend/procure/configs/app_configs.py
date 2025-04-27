@@ -20,7 +20,7 @@ API_PREFIX = "/api/v1"
 AUTH_API_PREFIX = f"{API_PREFIX}/auth"
 
 # Database configuration
-DB_USE_IAM_AUTH = os.getenv("DB_USE_IAM_AUTH", "false").lower() == "true"
+USE_RDS = os.getenv("USE_RDS", "false").lower() == "true"
 LOCAL_DATABASE_URL = os.getenv("DATABASE_URL", "postgresql://procure_user:procure_password@localhost:5432/procure_db")
 AWS_DATABASE_URL = os.getenv("AWS_DATABASE_URL")
 AWS_REGION = os.getenv("AWS_REGION", "us-east-2")

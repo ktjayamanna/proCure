@@ -7,10 +7,14 @@ services:
       dockerfile: deployment/docker_compose/Dockerfile
     container_name: procure_core_service
     environment:
-      # In production, we always use AWS RDS with IAM authentication
-      DB_USE_IAM_AUTH: "true"
+      # In production, we always use AWS RDS with master password authentication
+      USE_RDS: "true"
       AWS_DATABASE_URL: ${AWS_DATABASE_URL}
       AWS_REGION: ${AWS_REGION:-us-east-2}
+      # AWS credentials (no longer needed for DB authentication, but may be used for other AWS services)
+      AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID:-}
+      AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY:-}
+      AWS_SESSION_TOKEN: ${AWS_SESSION_TOKEN:-}
       PYTHONPATH: /app
       # Pass through other environment variables
       GOOGLE_CLOUD_PROJECT: ${GOOGLE_CLOUD_PROJECT:-}

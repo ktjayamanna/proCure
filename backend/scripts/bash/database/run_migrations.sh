@@ -14,14 +14,14 @@ else
     # Use default local database URL if .env doesn't exist
     echo "No .env file found, using default local database URL"
     export DATABASE_URL="postgresql://procure_user:procure_password@localhost:5432/procure_db"
-    export DB_USE_IAM_AUTH="false"
+    export USE_RDS="false"
 fi
 
 # Set Python path
 export PYTHONPATH=$PYTHONPATH:$(pwd)
 
 # If using local database, check if PostgreSQL is ready
-if [ "$DB_USE_IAM_AUTH" != "true" ]; then
+if [ "$USE_RDS" != "true" ]; then
     echo "⏳ Checking if PostgreSQL is ready..."
 
     # Check if Docker is running and PostgreSQL container exists

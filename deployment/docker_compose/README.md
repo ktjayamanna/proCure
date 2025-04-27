@@ -16,14 +16,14 @@ To start the development environment:
 ```
 
 This script will:
-1. Set `DB_USE_IAM_AUTH=false` in the `.vscode/.env` file
+1. Set `USE_RDS=false` in the `.vscode/.env` file
 2. Start the Docker Compose services defined in `docker-compose.dev.yml`
 
 ## Production Environment (`docker-compose.prod.yml`)
 
 The production environment includes:
 - Only the core service (no local PostgreSQL)
-- The core service configured to use AWS RDS with IAM authentication
+- The core service configured to use AWS RDS with master password authentication
 
 To start the production environment:
 
@@ -33,7 +33,7 @@ To start the production environment:
 ```
 
 This script will:
-1. Set `DB_USE_IAM_AUTH=true` in the `.vscode/.env` file
+1. Set `USE_RDS=true` in the `.vscode/.env` file
 2. Check if `AWS_DATABASE_URL` is set in the `.vscode/.env` file
 3. Start the Docker Compose services defined in `docker-compose.prod.yml`
 
@@ -41,21 +41,21 @@ This script will:
 
 The Docker Compose files use environment variables from the `.vscode/.env` file:
 
-- `DB_USE_IAM_AUTH`: Set to `true` to use AWS RDS, `false` to use local PostgreSQL
+- `USE_RDS`: Set to `true` to use AWS RDS, `false` to use local PostgreSQL
 - `DATABASE_URL`: URL for the local PostgreSQL database
-- `AWS_DATABASE_URL`: URL for the AWS RDS database
-- `AWS_REGION`: AWS region for IAM authentication
+- `AWS_DATABASE_URL`: URL for the AWS RDS database (including master password)
+- `AWS_REGION`: AWS region for the RDS instance
 
 ## Switching Between Environments
 
-You can switch between environments by changing the `DB_USE_IAM_AUTH` flag in the `.vscode/.env` file:
+You can switch between environments by changing the `USE_RDS` flag in the `.vscode/.env` file:
 
 ```
 # For development (local PostgreSQL)
-DB_USE_IAM_AUTH=false
+USE_RDS=false
 
 # For production (AWS RDS)
-DB_USE_IAM_AUTH=true
+USE_RDS=true
 ```
 
 After changing the flag, restart the Docker environment:

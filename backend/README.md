@@ -106,9 +106,9 @@ The backend follows these conventions:
 The application supports two database environments:
 
 1. **Local Development** - Uses a PostgreSQL database running in Docker
-2. **Production** - Uses AWS RDS with IAM authentication
+2. **Production** - Uses AWS RDS with master password authentication
 
-To switch between environments, you only need to change the `DB_USE_IAM_AUTH` environment variable.
+To switch between environments, you only need to change the `USE_RDS` environment variable.
 
 For detailed instructions, see [Database Switching Guide](docs/database_switching.md).
 

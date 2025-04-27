@@ -2,13 +2,15 @@
 
 # Script to start the production environment without local PostgreSQL database
 
-# Set working directory to project root if not already there
-if [[ "$PWD" != *"/deployment/docker_compose" ]]; then
-    cd "$(dirname "$0")/../../../" || exit 1
-fi
+# Get the absolute path to the project root directory
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PROJECT_ROOT="$(cd "$SCRIPT_DIR/../../../../" && pwd)"
 
-# Set the DB_USE_IAM_AUTH flag to true in the .env file
-ENV_FILE="backend/.vscode/.env"
+# Set working directory to project root
+cd "$PROJECT_ROOT" || exit 1
+
+# Set the USE_RDS flag to true in the .env file
+ENV_FILE="$PROJECT_ROOT/backend/.vscode/.env"
 
 # Check if .env file exists
 if [ ! -f "$ENV_FILE" ]; then
@@ -23,19 +25,31 @@ if ! grep -q "AWS_DATABASE_URL=" "$ENV_FILE" || [ -z "$(grep "AWS_DATABASE_URL="
     exit 1
 fi
 
-# Update the DB_USE_IAM_AUTH flag in the .env file
-sed -i 's/DB_USE_IAM_AUTH=.*/DB_USE_IAM_AUTH=true/' "$ENV_FILE"
+# Update the USE_RDS flag in the .env file
+sed -i 's/USE_RDS=.*/USE_RDS=true/' "$ENV_FILE"
 
-echo "✅ Set DB_USE_IAM_AUTH=true in $ENV_FILE"
+echo "✅ Set USE_RDS=true in $ENV_FILE"
 echo "🚀 Starting production environment without local PostgreSQL database..."
+
+# Export environment variables from .env file
+echo "📋 Exporting environment variables from $ENV_FILE"
+export $(grep -v '^#' "$ENV_FILE" | xargs)
+
+# Check if AWS_DATABASE_URL is exported correctly
+if [ -z "$AWS_DATABASE_URL" ]; then
+    echo "❌ Failed to export AWS_DATABASE_URL from $ENV_FILE"
+    exit 1
+fi
+
+echo "✅ Environment variables exported successfully"
 
 # Check if this script is being sourced or called from another script
 if [[ "${BASH_SOURCE[0]}" != "${0}" ]] || [[ "$1" == "--background" ]]; then
     # Start in detached mode if called from another script or with --background flag
-    cd deployment/docker_compose
+    cd "$PROJECT_ROOT/deployment/docker_compose"
     docker-compose -f docker-compose.prod.yml up -d --build
 else
     # Start in foreground mode if called directly
-    cd deployment/docker_compose
+    cd "$PROJECT_ROOT/deployment/docker_compose"
     docker-compose -f docker-compose.prod.yml up --build
 fi
