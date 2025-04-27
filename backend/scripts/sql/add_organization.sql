@@ -1,6 +1,6 @@
 -- Add organization
 INSERT INTO organizations (organization_id, domain_name, company_name, admins_remaining, members_remaining) VALUES
-('org_SUgU642rn5ah757vicu43awh7bZ6r4uL', 'firebaystudios.com', 'Firebay Studios', 200, 999)
+('org_rKdkCVYTwcpfgv62tw1p5lQNLys48yZQ', 'firebaystudios.com', 'Firebay Studios', 200, 999)
 ON CONFLICT (organization_id) DO UPDATE SET
   domain_name = EXCLUDED.domain_name,
   company_name = EXCLUDED.company_name,
@@ -15,4 +15,4 @@ SELECT
     o.admins_remaining,
     o.members_remaining
 FROM organizations o
-WHERE o.organization_id = 'org_SUgU642rn5ah757vicu43awh7bZ6r4uL';
+WHERE o.organization_id = 'org_rKdkCVYTwcpfgv62tw1p5lQNLys48yZQ';
