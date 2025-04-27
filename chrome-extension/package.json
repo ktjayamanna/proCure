@@ -1,8 +1,8 @@
 {
   "name": "chrome-extension",
-  "displayName": "Chrome extension",
+  "displayName": "ProCure SaaS Usage Tracker",
   "version": "0.0.1",
-  "description": "proCure SaaS Usage Tracker",
+  "description": "Set it and forget it to see how your organization is using SaaS",
   "author": "proCure LLC",
   "scripts": {
     "dev": "plasmo dev",
