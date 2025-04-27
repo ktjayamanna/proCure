@@ -16,6 +16,34 @@ You can start editing the popup by modifying `popup.tsx`. It should auto-update 
 
 For further guidance, [visit our Documentation](https://docs.plasmo.com/)
 
+## Environment Configuration
+
+The extension uses environment variables to configure the backend API URL:
+
+- `.env.development` - Used during development (`npm run dev`)
+- `.env.production` - Used for production builds (`npm run build`)
+
+### API URL Configuration
+
+You can switch between local and AWS backend URLs by changing the `PLASMO_PUBLIC_USE_AWS_API` flag:
+
+```
+# Use local backend
+PLASMO_PUBLIC_USE_AWS_API=false
+
+# Use AWS backend
+PLASMO_PUBLIC_USE_AWS_API=true
+```
+
+The URLs themselves are also configurable:
+
+```
+PLASMO_PUBLIC_LOCAL_API_URL=http://localhost:8000/api/v1
+PLASMO_PUBLIC_AWS_API_URL=https://y3otceq5rh.execute-api.us-east-2.amazonaws.com/api/v1
+```
+
+After changing environment variables, you need to restart the development server or rebuild the extension for the changes to take effect.
+
 ## Making production build
 
 Run the following:

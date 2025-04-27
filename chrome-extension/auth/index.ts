@@ -9,8 +9,8 @@ const storage = new Storage({
 const USER_KEY = 'auth_user'
 const TOKEN_KEY = 'auth_token'
 
-// Backend API URL - should be configurable in a production environment
-const API_URL = 'http://localhost:8000/api/v1/auth'
+// Import API URL from config
+import { getAuthApiUrl } from '../config'
 
 // Types
 export interface User {
@@ -57,7 +57,8 @@ export const signUp = async (
   // Organization is determined by email domain
   const deviceId = await getDeviceId()
 
-  const response = await fetch(`${API_URL}/create-user`, {
+  const apiUrl = getAuthApiUrl();
+  const response = await fetch(`${apiUrl}/create-user`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json'
@@ -116,7 +117,8 @@ export const signIn = async (
 ): Promise<{ user: User; token: string }> => {
   const deviceId = await getDeviceId()
 
-  const response = await fetch(`${API_URL}/sign-in`, {
+  const apiUrl = getAuthApiUrl();
+  const response = await fetch(`${apiUrl}/sign-in`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json'
@@ -177,7 +179,8 @@ export const signInWithToken = async (): Promise<{ user: User; token: string } |
   const deviceId = await getDeviceId()
 
   try {
-    const response = await fetch(`${API_URL}/sign-in`, {
+    const apiUrl = getAuthApiUrl();
+    const response = await fetch(`${apiUrl}/sign-in`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'

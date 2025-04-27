@@ -14,8 +14,8 @@ const storage = new Storage({
 const LAST_SYNC_TIME_KEY = 'last_sync_time';
 const SYNC_STATUS_KEY = 'sync_status';
 
-// Backend API URL
-const API_URL = 'http://localhost:8000/api/v1/url-visits';
+// Import API URL from config
+import { getUrlVisitsApiUrl } from '../../config';
 
 interface SyncContextType {
   syncStatus: SyncStatus;
@@ -89,8 +89,11 @@ export const SyncProvider: React.FC<SyncProviderProps> = ({ children }) => {
         entries: formattedEntries
       };
 
+      // Get API URL from config
+      const apiUrl = getUrlVisitsApiUrl();
+
       // Send request to backend
-      const response = await fetch(API_URL, {
+      const response = await fetch(apiUrl, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
