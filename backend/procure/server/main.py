@@ -21,7 +21,8 @@ app.add_middleware(
         "http://localhost:3000",  # For web app development
         "http://127.0.0.1:3000",  # Alternative local address
         "http://localhost:8000",  # For backend API access
-        "http://127.0.0.1:8000"   # Alternative backend address
+        "http://127.0.0.1:8000",   # Alternative backend address
+        "https://procure-phi.vercel.app"
     ],
     allow_credentials=True,
     allow_methods=["*"],

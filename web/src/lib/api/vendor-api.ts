@@ -1,5 +1,4 @@
 // Vendor API service
-import { API_BASE_URL } from '../config';
 
 /**
  * Fetch vendor URLs using OpenAI via server-side API route

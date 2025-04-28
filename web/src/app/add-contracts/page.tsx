@@ -99,7 +99,7 @@ export default function AddContractsPage() {
   const [headers, setHeaders] = useState<string[]>([]);
   const [mappings, setMappings] = useState<Record<string, string>>({});
   const [isProcessing, setIsProcessing] = useState(false);
-  const [fileData, setFileData] = useState<any[]>([]);
+  const [fileData, setFileData] = useState<Record<string, unknown>[]>([]);
   const [useAIForProductUrl, setUseAIForProductUrl] = useState(false);
   const [useDefaultNumSeats, setUseDefaultNumSeats] = useState(false);
   const [useDefaultAnnualSpend, setUseDefaultAnnualSpend] = useState(false);
@@ -129,7 +129,7 @@ export default function AddContractsPage() {
           if (results.data.length > 0) {
             const headers = Object.keys(results.data[0] as object);
             setHeaders(headers);
-            setFileData(results.data);
+            setFileData(results.data as Record<string, unknown>[]);
           } else {
             toast.error("No data found in the CSV file");
           }
@@ -156,8 +156,8 @@ export default function AddContractsPage() {
             // Convert the data to the format we need (array of objects with header keys)
             const formattedData = [];
             for (let i = 1; i < jsonData.length; i++) {
-              const row = jsonData[i] as any[];
-              const rowData: Record<string, any> = {};
+              const row = jsonData[i] as unknown[];
+              const rowData: Record<string, unknown> = {};
 
               headers.forEach((header, index) => {
                 rowData[header] = row[index] || '';
@@ -230,7 +230,7 @@ export default function AddContractsPage() {
 
     // Process the data based on mappings
     const processedData = fileData.map((row) => {
-      const processedRow: Record<string, any> = {};
+      const processedRow: Record<string, unknown> = {};
 
       // Process required fields
       REQUIRED_FIELDS.forEach((field) => {
@@ -260,13 +260,13 @@ export default function AddContractsPage() {
 
     try {
       // If AI option is selected for product URLs, fetch them first
-      let vendorUrls: Record<string, string> = {};
+      const vendorUrls: Record<string, string> = {};
 
       if (useAIForProductUrl) {
         setIsLoadingUrls(true);
         try {
           // Extract all vendor names
-          const vendorNames = processedData.map(contract => contract.vendor_name);
+          const vendorNames = processedData.map(contract => String(contract.vendor_name));
 
           // Call the API route to get URLs via OpenAI
           const result = await fetchVendorUrls(vendorNames);
@@ -295,35 +295,35 @@ export default function AddContractsPage() {
         try {
           // Convert the processed data to the format expected by the API
           const contractData: Contract = {
-            vendor_name: contract.vendor_name,
+            vendor_name: String(contract.vendor_name),
             // Use AI-generated URL if AI option is selected, otherwise use mapped value
             product_url: useAIForProductUrl
-              ? vendorUrls[contract.vendor_name] // No fallback - we've already validated all URLs exist
-              : contract.product_url,
+              ? vendorUrls[String(contract.vendor_name)] // No fallback - we've already validated all URLs exist
+              : String(contract.product_url),
             organization_id: user.organization_id,
             // Use default value of 1 if checkbox is checked, otherwise parse from input
             num_seats: useDefaultNumSeats
               ? 1
-              : parseInt(contract.number_of_seats) || 1,
+              : parseInt(String(contract.number_of_seats)) || 1,
             // Use default value of 0 if checkbox is checked, otherwise parse from input
             annual_spend: useDefaultAnnualSpend
               ? 0
-              : parseFloat(parseFloat(contract.annual_spend || "0").toFixed(2)),
-            contract_type: contract.contract_type,
-            contract_status: contract.contract_status,
-            payment_type: contract.payment_type,
-            notes: contract.notes
+              : parseFloat(parseFloat(String(contract.annual_spend || "0")).toFixed(2)),
+            contract_type: contract.contract_type ? String(contract.contract_type) : undefined,
+            contract_status: contract.contract_status ? String(contract.contract_status) : undefined,
+            payment_type: contract.payment_type ? String(contract.payment_type) : undefined,
+            notes: contract.notes ? String(contract.notes) : undefined
           };
 
           // Format date fields if they exist
           if (contract.expire_at) {
             try {
               // Parse the date and convert to ISO format
-              const expireDate = new Date(contract.expire_at);
+              const expireDate = new Date(String(contract.expire_at));
               if (!isNaN(expireDate.getTime())) {
                 contractData.expire_at = expireDate.toISOString();
               }
-            } catch (error) {
+            } catch {
               console.warn("Invalid expire_at date format:", contract.expire_at);
             }
           }
@@ -331,11 +331,11 @@ export default function AddContractsPage() {
           if (contract.created_at) {
             try {
               // Parse the date and convert to ISO format
-              const createdDate = new Date(contract.created_at);
+              const createdDate = new Date(String(contract.created_at));
               if (!isNaN(createdDate.getTime())) {
                 contractData.created_at = createdDate.toISOString();
               }
-            } catch (error) {
+            } catch {
               console.warn("Invalid created_at date format:", contract.created_at);
             }
           }
