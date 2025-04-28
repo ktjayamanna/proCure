@@ -10,7 +10,7 @@ export default function SignUpPage() {
   return (
     <div className="container mx-auto py-10 max-w-md">
       <div className="mb-6 text-center">
-        <h1 className="text-3xl font-bold">Sign Up</h1>
+        <h1 className="text-3xl font-bold"> ProCure</h1>
         <p className="text-muted-foreground mt-2">Enter your details to create a new account</p>
       </div>
 
