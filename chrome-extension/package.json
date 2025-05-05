@@ -43,8 +43,7 @@
     "permissions": [
       "tabs",
       "storage",
-      "alarms",
-      "activeTab"
+      "alarms"
     ]
   }
 }
