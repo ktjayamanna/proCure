@@ -250,3 +250,33 @@ If you encounter issues not covered here, please:
 ## License
 
 This project is licensed under the Apache License 2.0.
+
+## Contributing to proCure
+
+### Why Contribute?
+
+proCure tackles a real business problem that affects organizations of all sizes - wasted SaaS spending. By contributing to this project, you'll:
+
+- **Make a tangible impact**: Help organizations save thousands on unused software subscriptions
+- **Build with modern tech**: Gain experience with our full-stack TypeScript, React, FastAPI, and PostgreSQL architecture
+- **Join a growing community**: Connect with developers passionate about solving practical business problems
+
+### How to Contribute
+
+We welcome contributions of all sizes, from fixing typos to implementing new features:
+
+1. **Find an issue**: Please make an issue if you want to work on something.
+2. **Fork and clone**: Fork the repository and clone it locally
+3. **Set up your environment**: Follow the setup instructions above
+4. **Make your changes**: Implement your feature or fix
+5. **Submit a PR**: Push your changes and open a pull request
+
+### Development Roadmap
+
+We're currently focused on:
+
+- Improving the Chrome extension's performance and privacy features
+- Enhancing the analytics dashboard with more visualization options
+- Adding integration with popular procurement systems
+- Expanding test coverage across all components
+
